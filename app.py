@@ -47,10 +47,25 @@ def login_user():
     if user is None:
         return "Error: User does not exist!"
 
-    if user.password != password:
+    if user.password != password :
         return "Error: Password does not match!"
 
-    return url_for('home', username=request.json.get("username"))
+    return url_for('home', username=request.json.get("username"), friends=request.json.get("friend_list"))
+
+'''
+@app.route("/login/user", methods=["POST"])
+def dislay_friends():
+    if not request.is_json:
+        abort(404)
+
+    username = request.json.get("username")
+    #user =  db.get_user(username)
+    
+    #friend_list = request.json.get(username + "friends")
+    #friends = db.get_friend_list(user)
+
+    return url_for('home', friend_list=request.json.get(username + "friends"))
+'''
 
 # handles a get request to the signup page
 @app.route("/signup")
@@ -67,7 +82,7 @@ def signup_user():
 
     if db.get_user(username) is None:
         db.insert_user(username, password)
-        return url_for('home', username=username)
+        return url_for('home', username=username,friends=request.json.get("friend_list"))
     return "Error: User already exists!"
 
 # handler when a "404" error happens
@@ -80,7 +95,10 @@ def page_not_found(_):
 def home():
     if request.args.get("username") is None:
         abort(404)
-    return render_template("home.jinja", username=request.args.get("username"))
+
+    username=request.args.get("username")
+
+    return render_template("home.jinja", username=request.args.get("username"), friends=request.args.get("friend_list"))
 
 
 

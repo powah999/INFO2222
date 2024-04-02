@@ -41,7 +41,7 @@
             // we pass in the username and password here
             let res = await axios.post(loginURL, {
                 username: $("#username").val(),
-                password: $("#password").val()
+                password: $("#password").val(),
             });
 
             // if the server sends in an error message, alert() the error message

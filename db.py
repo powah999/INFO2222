@@ -25,10 +25,18 @@ Base.metadata.create_all(engine)
 def insert_user(username: str, password: str):
     with Session(engine) as session:
         user = User(username=username, password=password)
+        friend_list = Friends(friends="")
         session.add(user)
+        session.add(friend_list)
         session.commit()
 
 # gets a user from the database
 def get_user(username: str):
     with Session(engine) as session:
         return session.get(User, username)
+"""
+#gets a user's friend list from database
+def insert_friend(username: str):
+    with Session(engine) as session:
+        return session.get(Friends)
+"""

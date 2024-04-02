@@ -5,12 +5,12 @@ also contains the definition for the room class used to keep track of socket.io 
 
 Just a sidenote, using SQLAlchemy is a pain. If you want to go above and beyond, 
 do this whole project in Node.js + Express and use Prisma instead, 
-Prisma docs also looks so much better in compar ison
+Prisma docs also looks so much better in comparison
 
 or use SQLite, if you're not into fancy ORMs (but be mindful of Injection attacks :) )
 '''
 
-from sqlalchemy import String
+from sqlalchemy import String, Column, ARRAY
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from typing import Dict
 
@@ -29,8 +29,13 @@ class User(Base):
     # in other words we've mapped the username Python object property to an SQL column of type String 
     username: Mapped[str] = mapped_column(String, primary_key=True)
     password: Mapped[str] = mapped_column(String)
-    
 
+
+class Friends(Base):
+    __tablename__ = "friend_list"
+
+    friends: Mapped[str] = mapped_column(String, primary_key=True)
+      
 # stateful counter used to generate the room id
 class Counter():
     def __init__(self):
