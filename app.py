@@ -50,7 +50,7 @@ def login_user():
     if user.password != password :
         return "Error: Password does not match!"
 
-    return url_for('home', username=request.json.get("username"), friends=request.json.get("friend_list"))
+    return url_for('home', username=request.json.get("username"), friends=request.json.get("friends"))
 
 '''
 @app.route("/login/user", methods=["POST"])
@@ -81,8 +81,8 @@ def signup_user():
     password = request.json.get("password")
 
     if db.get_user(username) is None:
-        db.insert_user(username, password)
-        return url_for('home', username=username,friends=request.json.get("friend_list"))
+        db.insert_user(username, password, status=True)
+        return url_for('home', username=username)
     return "Error: User already exists!"
 
 # handler when a "404" error happens
@@ -98,9 +98,10 @@ def home():
 
     username=request.args.get("username")
 
-    return render_template("home.jinja", username=request.args.get("username"), friends=request.args.get("friend_list"))
+    return render_template("home.jinja", username=request.args.get("username"), friends=request.args.get("friends"))
 
 
 
 if __name__ == '__main__':
     socketio.run(app)
+
