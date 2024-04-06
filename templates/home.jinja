@@ -33,10 +33,19 @@
     </ol>
 </nav>
 
-<!-- Display friends list upon successful login -->
+<!-- Display friends list upon successful login-->
 <nav style="border-bottom: 1px solid black;">
     <ol style="float: left">
-        <li style="display:inline-block">Friends:  {{ friends }} </li>
+        <h2>My friends:</h2>
+        {% if friends %}
+            {% for friend in friends %}
+                <li style="display:inline-block">
+                    {{ friend.name }}
+                </li>
+            {% endfor %}
+        {% else %}
+            <p> You have no friends :&#40; <p>
+        {% endif %}
     </ol>
 </nav>
 
@@ -57,6 +66,15 @@
         <button onclick="join_room()">Chat</button>
     </section>
 
+    <section id="friend_requests_box">
+        <p class="text">Send a friend request to: </p>
+        <input id="new_friend" placeholder="username">
+        <!-- MDN says its bad practice to use the onclick attribute,
+        but we're using it anyways coz its easy :)-->
+        <button onclick="send_friend_request()">Send request</button>
+    </section>
+  
+
     <!-- The (message) input box is set to display: none initially, 
     this means the input box is "invisible" initially-->
     <section id="input_box" style="display: none" >
@@ -65,6 +83,12 @@
         <button onclick="send()">Send</button>
         <button onclick="leave()">Leave Room</button>
     </section>
+
+    <section id="response_box" style="display: none" >
+        <button onclick="accept()">Accept</button>
+        <button onclick="decline()">Decline</button>
+    </section>
+
 </main>
 
 <script src="/static/js/libs/socket.io.min.js"></script>
@@ -99,14 +123,18 @@
         // we'll display the message box, instead of the "Chat with: " box
         $("#chat_box").hide();
         $("#input_box").show();
+        $("#friend_requests_box").show();
+        $("#response_box").hide();
         room_id = parseInt(Cookies.get("room_id"));
     })
     
     // Here's the Socket IO part of the code
     // things get a bit complicated here so brace yourselves :P
     let username = "{{ username }}";
+    //let friends = "{{ friends }}";
 
     Cookies.set('username', username);
+   // Cookies.set('friends', friends);
 
     // initializes the socket
     const socket = io();
@@ -116,6 +144,19 @@
         add_message(msg, color);
     })
     
+    socket.on("incoming_request", (msg, color="black", sender_name) => {
+        add_message(msg, color);
+        var sender_name = sender_name;
+        $("#response_box").show();
+    })
+
+    function accept() {
+        socket.emit("accept", username, sender_name, room_id);
+        $("#chat_box").hide();
+        $("#response_box").hide();
+        $("#input_box").show();
+    }
+
     // we'll send the message to the server by emitting a "send" event
     function send() {
         let message = $("#message").val();
@@ -140,6 +181,7 @@
 
             // set the room id variable to the room id returned by the server
             room_id = res;
+            
             Cookies.set("room_id", room_id);
 
             // now we'll show the input box, so the user can input their message
@@ -148,6 +190,31 @@
         });
      
     }
+
+    // emit a send_request event to the server to make a new friend request
+    function send_friend_request() {
+       
+        let new_friend = $("#new_friend").val();
+
+        // pass in the receiver of our message to the server
+        // as well as the current user's username
+        socket.emit("send_request", username, new_friend, (res) => {
+            // res is a string with the error message if the error occurs
+            // this  is a pretty bad way of doing error handling, but watevs
+            if (typeof res != "number") {
+                alert(res);
+                return;
+            }
+
+            // set the room id variable to the room id returned by the server
+            room_id = res;
+            let sender_name = sender_name
+            Cookies.set("username", new_friend);
+            Cookies.set("room_id", room_id);
+
+        });
+    }
+
 
     // function when the user clicks on "Leave Room"
     // emits a "leave" event, telling the server that we want to leave the room

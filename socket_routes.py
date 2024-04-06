@@ -50,15 +50,26 @@ def send(username, message, room_id):
 # sent when the user joins a room
 @socketio.on("join")
 def join(sender_name, receiver_name):
-    
-    receiver = db.get_user(receiver_name)
-    if receiver is None:
-        return "Unknown receiver!"
-    
     sender = db.get_user(sender_name)
     if sender is None:
         return "Unknown sender!"
 
+    #check if person you're chatting with is your friend
+    sender_friends = db.get_friends(sender_name)
+
+    exists = False
+    for friend in sender_friends:
+        if friend.username == receiver_name:
+            exists = True
+            break
+
+    if not exists:
+        return f"{ receiver_name } is not your friend!"
+        
+    receiver = db.get_user(receiver_name)
+    if receiver is None:
+        return "Unknown receiver!"
+    
     room_id = room.get_room_id(receiver_name)
 
     # if the user is already inside of a room 
@@ -86,3 +97,35 @@ def leave(username, room_id):
     emit("incoming", (f"{username} has left the room.", "red"), to=room_id)
     leave_room(room_id)
     room.leave_room(username)
+
+@socketio.on("send_request")
+def send_request(sender_name, receiver_name):
+    
+    receiver = db.get_user(receiver_name)
+    if receiver is None:
+        return "Unknown receiver!"
+    
+    sender = db.get_user(sender_name)
+    if sender is None:
+        return "Unknown sender!"
+    
+    #check if new friend already exists
+    sender_friends = db.get_friends(sender_name)
+    for friend in sender_friends:
+        if friend.username == receiver_name:
+            return "This person is already your friend!"
+    
+    room_id = room.create_room(sender_name, receiver_name)
+    join_room(room_id)
+    #sender of request joins room
+    room.join_room(receiver_name, room_id)
+    join_room(room_id)   
+    emit("incoming_request", (f"{sender_name} wants to be your friend. Do you accept?", "purple", sender_name), to=room_id, include_self=False)
+    return room_id
+
+@socketio.on("accept")
+def accept(username, sender_name, room_id):
+    db.add_friend(username, sender_name)
+    db.add_friend(sender_name, username)
+    
+    emit("incoming", (f"Friend request accepted! {username} and {sender_name} are now friends!", "black"), to=room_id)

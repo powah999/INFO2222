@@ -3,18 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Friend List</title>
+<title>My Friends:</title>
 </head>
 <body>
-
-<h2>My Friends</h2>
-
+{% for friend in friends %}
+  <li>{{ friend.name }}: {{ friend.status }} </li>
+{% endfor %}
 <ul>
-  <li>Friend 1</li>
-  <li>Friend 2</li>
-  <li>Friend 3</li>
-  <!-- Add more friends as needed -->
-</ul>
-
 </body>
 </html>
+

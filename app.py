@@ -42,6 +42,7 @@ def login_user():
 
     username = request.json.get("username")
     password = request.json.get("password")
+   # status = request.json.get("status")
 
     user =  db.get_user(username)
     if user is None:
@@ -51,6 +52,17 @@ def login_user():
         return "Error: Password does not match!"
 
     return url_for('home', username=request.json.get("username"), friends=request.json.get("friends"))
+
+
+#handles a post request when the user sends friend
+def accept_friend():
+    if not request.is_json:
+        abort(404)
+    
+    username = request.json.get("username")
+    user =  db.get_user(username)
+    
+
 
 '''
 @app.route("/login/user", methods=["POST"])
@@ -79,11 +91,17 @@ def signup_user():
         abort(404)
     username = request.json.get("username")
     password = request.json.get("password")
+    
+    #add username and password security requirements here
 
     if db.get_user(username) is None:
-        db.insert_user(username, password, status=True)
-        return url_for('home', username=username)
+        db.insert_user(username, password)
+        return url_for('home', username=username, friends=request.json.get("friends"))
     return "Error: User already exists!"
+
+
+
+
 
 # handler when a "404" error happens
 @app.errorhandler(404)
@@ -96,12 +114,11 @@ def home():
     if request.args.get("username") is None:
         abort(404)
 
-    username=request.args.get("username")
-
     return render_template("home.jinja", username=request.args.get("username"), friends=request.args.get("friends"))
 
 
 
 if __name__ == '__main__':
+    app.debug=True
     socketio.run(app)
 

@@ -19,7 +19,7 @@ class Base(DeclarativeBase):
     pass
 
 # model to store user information
-class User(Base):
+class User(Base): 
     __tablename__ = "user"
     
     # looks complicated but basically means
@@ -28,8 +28,9 @@ class User(Base):
     # then accessing john.username -> will give me some data of type string
     # in other words we've mapped the username Python object property to an SQL column of type String 
     username: Mapped[str] = mapped_column(String, primary_key=True)
-    password: Mapped[str] = mapped_column(String)
-    status: Mapped[bool] = mapped_column(Boolean) #true if online
+    password: Mapped[str] = mapped_column(String(60)) #hash of password
+
+    #status: Mapped[bool] = mapped_column(Boolean) #Online if True
 
     friends: Mapped[List["Friend"]] = relationship(back_populates="user")
 
@@ -37,11 +38,14 @@ class User(Base):
 class Friend(Base):
     __tablename__ = "friend"
 
-    username: Mapped[str] = mapped_column(ForeignKey("user.username"), primary_key=True)
-    status: Mapped[bool] = mapped_column(Boolean)
-   # user_username: Mapped[str] = mapped_column(ForeignKey("user.username"))
+    username: Mapped[str] = mapped_column(String, primary_key=True)
+    #status: Mapped[bool] = mapped_column(Boolean)
+    user_username: Mapped[str] = mapped_column(ForeignKey("user.username"))
 
-    user: Mapped[User] = relationship(back_populates="friends")
+    user: Mapped["User"] = relationship(back_populates="friends")
+
+    def __str__(self):
+        return f'{self.username}'
       
 # stateful counter used to generate the room id
 class Counter():
