@@ -10,7 +10,7 @@ Prisma docs also looks so much better in comparison
 or use SQLite, if you're not into fancy ORMs (but be mindful of Injection attacks :) )
 '''
 
-from sqlalchemy import String, ForeignKey, Boolean
+from sqlalchemy import String, ForeignKey, INTEGER, Boolean
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from typing import Dict, List
 
@@ -28,11 +28,17 @@ class User(Base):
     # then accessing john.username -> will give me some data of type string
     # in other words we've mapped the username Python object property to an SQL column of type String 
     username: Mapped[str] = mapped_column(String, primary_key=True)
-    password: Mapped[str] = mapped_column(String(60)) #hash of password
+    password: Mapped[str] = mapped_column(String(60)) #hash (kdf) of password
+    salt: Mapped[str] = mapped_column(String)
+    attempts: Mapped[int] = mapped_column(INTEGER, default=0) #number of failed login attempts
 
     #status: Mapped[bool] = mapped_column(Boolean) #Online if True
 
-    friends: Mapped[List["Friend"]] = relationship(back_populates="user")
+    friends: Mapped[List["Friend"]] = relationship(back_populates="user") #accepted friend requests
+    requests: Mapped[List["Request"]] = relationship(back_populates="user") #received friend requests
+
+    def __init__(self):
+        self.attempts = 0
 
 
 class Friend(Base):
@@ -46,7 +52,55 @@ class Friend(Base):
 
     def __str__(self):
         return f'{self.username}'
-      
+
+# friend requests
+class Request(Base):
+    __tablename__ = "request"
+
+    username: Mapped[str] = mapped_column(ForeignKey("user.username"))
+    #sent: Mapped[str] = mapped_column(String)
+    friend_username: Mapped[str] = mapped_column(String, primary_key=True) #name of friend who sent/received request
+    is_received: Mapped[bool] = mapped_column(Boolean) #if true: received, if false: sent/pending
+
+    user: Mapped["User"] = relationship(back_populates="requests")
+
+"""
+class Request():
+    def __init__(self):
+        self.received: Dict[str, list] = {}
+        self.sent: Dict[str, list] = {}
+    
+    def send_request(self, user: str, receiver: str):
+        self.sent[user].append(receiver)
+        self.received[receiver].append(user)
+    
+    def accept_request(self, user: str, receiver: str):
+
+    def decline_request(self, user: str, receiver: str):
+"""
+
+#number of failed login attempts for a user
+class Attempts():
+    def __init__(self):
+        self.dict: Dict[str, int] = {}
+
+    def set_failed(self, user: str):
+        self.dict[user] += 1
+    
+    def reset(self, user: str):
+        self.dict[user] = 0
+    
+    def get_attempts(self, user: str):
+        if user not in self.user.keys():
+            return
+        return self.dict[user]
+    
+    def is_blocked(self, user: str):
+        if user not in self.attempts.keys():
+            return
+        return self.dict[user] > 3
+    
+
 # stateful counter used to generate the room id
 class Counter():
     def __init__(self):

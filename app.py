@@ -8,6 +8,8 @@ from flask import Flask, render_template, request, abort, url_for
 from flask_socketio import SocketIO
 import db
 import secrets
+from string import ascii_letters, digits, punctuation
+import bcrypt
 
 # import logging
 
@@ -23,6 +25,9 @@ socketio = SocketIO(app)
 
 # don't remove this!!
 import socket_routes
+
+
+attempts = db.Attempts()
 
 # index page
 @app.route("/")
@@ -44,40 +49,26 @@ def login_user():
     password = request.json.get("password")
    # status = request.json.get("status")
 
-    user =  db.get_user(username)
+    user = db.get_user(username)
     if user is None:
         return "Error: User does not exist!"
-
-    if user.password != password :
+    
+    if attempts.is_blocked(username):
+        return "Error: Your account has been blocked due to too many failed login attempts"
+    
+    #password verification
+    verify = bcrypt.kdf(password=password, salt=user.salt, desired_key_bytes=60, rounds=200)
+    if verify != user.password:
+        attempts.set_failed(username)
+        if attempts.is_blocked(username):
+            # log when account was blocked --> unblock in an hour?
+            return "Too many failed login attempts, your account has been blocked temporarily"
+        
         return "Error: Password does not match!"
 
-    return url_for('home', username=request.json.get("username"), friends=request.json.get("friends"))
+    attempts.reset(username)
 
-
-#handles a post request when the user sends friend
-def accept_friend():
-    if not request.is_json:
-        abort(404)
-    
-    username = request.json.get("username")
-    user =  db.get_user(username)
-    
-
-
-'''
-@app.route("/login/user", methods=["POST"])
-def dislay_friends():
-    if not request.is_json:
-        abort(404)
-
-    username = request.json.get("username")
-    #user =  db.get_user(username)
-    
-    #friend_list = request.json.get(username + "friends")
-    #friends = db.get_friend_list(user)
-
-    return url_for('home', friend_list=request.json.get(username + "friends"))
-'''
+    return url_for('home', username=request.json.get("username"), friends=request.json.get("friends"), received=db.get_friend_requests(username, True), pending=db.get_friend_requests(username, False))
 
 # handles a get request to the signup page
 @app.route("/signup")
@@ -93,14 +84,29 @@ def signup_user():
     password = request.json.get("password")
     
     #add username and password security requirements here
+    if len(password) < 12:
+        return "Password length must be at least 12 characters!"
+    
+    if set(password).difference(digits):
+        return "Password requires at least one numeric character!"
+    
+    if set(password).difference(ascii_letters):
+        return "Password requires at least one alphabetic character!"
+    
+    if set(password).difference(punctuation):
+        return "Password requires at least one special character!"
+    
+    #hash password
+    password = password.encode('ascii')
+
+    salt = bcrypt.gensalt()
+    hash = bcrypt.kdf(password=password, salt=salt, desired_key_bytes=60, rounds=200)
 
     if db.get_user(username) is None:
-        db.insert_user(username, password)
+        db.insert_user(username, hash, salt)
+        attempts.reset(username)
         return url_for('home', username=username, friends=request.json.get("friends"))
     return "Error: User already exists!"
-
-
-
 
 
 # handler when a "404" error happens
@@ -114,9 +120,9 @@ def home():
     if request.args.get("username") is None:
         abort(404)
 
-    return render_template("home.jinja", username=request.args.get("username"), friends=request.args.get("friends"))
+    username=request.args.get("username")
 
-
+    return render_template("home.jinja", username=username, friends=request.args.get("friends"), received=db.get_friend_requests(username, True), pending=db.get_friend_requests(username, False))
 
 if __name__ == '__main__':
     app.debug=True

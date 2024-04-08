@@ -98,6 +98,7 @@ def leave(username, room_id):
     leave_room(room_id)
     room.leave_room(username)
 
+"""
 @socketio.on("send_request")
 def send_request(sender_name, receiver_name):
     
@@ -115,17 +116,65 @@ def send_request(sender_name, receiver_name):
         if friend.username == receiver_name:
             return "This person is already your friend!"
     
+    #receiver of request joins room 
     room_id = room.create_room(sender_name, receiver_name)
     join_room(room_id)
-    #sender of request joins room
-    room.join_room(receiver_name, room_id)
-    join_room(room_id)   
-    emit("incoming_request", (f"{sender_name} wants to be your friend. Do you accept?", "purple", sender_name), to=room_id, include_self=False)
+    
+    emit("incoming_request", (f"{sender_name} wants to be your friend. Do you accept?", "purple", sender_name), to=room_id)
     return room_id
+"""
 
+
+@socketio.on("send_request")
+def send_request(sender_name, receiver_name):
+    
+    receiver = db.get_user(receiver_name)
+    if receiver is None:
+        return "Unknown receiver!"
+    
+    sender = db.get_user(sender_name)
+    if sender is None:
+        return "Unknown sender!"
+    
+    #check if new friend already exists
+    sender_friends = db.get_friends(sender_name)
+    for friend in sender_friends:
+        if friend.username == receiver_name:
+            return "This person is already your friend!"
+    
+    #check if friend request has already been sent
+    sender_requests = db.get_friend_requests(sender_name, False)
+    for pending in sender_requests:
+        if pending.friend_username == receiver_name:
+            return "You've already sent this person a request!"
+    
+    #add to sender's pending requests
+    db.add_request(sender_name, receiver_name, False)
+
+    #add to receiver's sent requests
+    db.add_request(receiver_name, sender_name, True)
+
+@socketio.on("accept")
+def accept(sender_name, receiver_name):
+    db.remove_request(sender_name, receiver_name)
+    db.remove_request(receiver_name, sender_name)
+
+    db.add_friend(sender_name, receiver_name)
+    db.add_friend(receiver_name, sender_name)
+
+@socketio.on("decline")
+def decline(sender_name, receiver_name):
+    db.remove_request(sender_name, receiver_name)
+    db.remove_request(receiver_name, sender_name)
+
+#remove pending request option?
+
+
+"""
 @socketio.on("accept")
 def accept(username, sender_name, room_id):
     db.add_friend(username, sender_name)
     db.add_friend(sender_name, username)
-    
+
     emit("incoming", (f"Friend request accepted! {username} and {sender_name} are now friends!", "black"), to=room_id)
+"""

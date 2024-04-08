@@ -24,6 +24,16 @@
         margin-bottom: 2px;
     }
 
+    .requests {
+        float: left;
+        margin-bottom: 5px;
+    }
+
+    .received {
+        margin-bottom: 10px;
+    }
+
+
 </style>
 
 <!--Navbar, you'll see the username here-->
@@ -34,21 +44,57 @@
 </nav>
 
 <!-- Display friends list upon successful login-->
-<nav style="border-bottom: 1px solid black;">
-    <ol style="float: left">
+<div style="border-bottom: 1px solid black;">
+    <ul style="float: left">
         <h2>My friends:</h2>
         {% if friends %}
             {% for friend in friends %}
                 <li style="display:inline-block">
-                    {{ friend.name }}
+                    <div class="received">
+                    <span>{{ friend.username }}</span>
+                    <button onclick="join_room( {{friend.username}} )">Chat</button>
+                    </div>
                 </li>
             {% endfor %}
         {% else %}
             <p> You have no friends :&#40; <p>
         {% endif %}
-    </ol>
-</nav>
+    </ul>
+</div>
 
+<div>
+    <ul style="float: right">
+    <h2>Pending friend requests:</h2>
+    {% if pending %}
+            {% for request in pending %}
+                <li style="display:inline-block">
+                    {{ request.friend_username }}  
+                </li>
+            {% endfor %}
+        {% else %}
+            <p> You have no pending requests! <p>
+        {% endif %}
+    </ul>
+</div>
+
+<div>
+    <ul style="float: right">
+    <h2>Received friend requests:</h2>
+    {% if received %}
+            {% for request in received %}
+                <li style="display:inline-block"> 
+                    <div class="received">
+                    <span>{{ request.friend_username }}</span>
+                    <button onclick="accept( {{ request.friend_username}} )">Accept</button>
+                    <button onclick="decline( {{ request.friend_username}} )">Decline</button>
+                    </div>
+                </li>
+            {% endfor %}
+        {% else %}
+            <p> No one wants to be your friend :&#40; <p>
+        {% endif %}
+    </ul>
+</div>
 
 <h1>WhyApp </h1>
 
@@ -58,7 +104,7 @@
 
     <!-- These part ideally should be a form element, 
     but I wrote this code a year ago and I don't want to break anything...-->
-    <section id="chat_box">
+    <section id="chat_box" style="display: none">
         <p class="text">Chat with: </p>
         <input id="receiver" placeholder="username">
         <!-- MDN says its bad practice to use the onclick attribute,
@@ -69,12 +115,9 @@
     <section id="friend_requests_box">
         <p class="text">Send a friend request to: </p>
         <input id="new_friend" placeholder="username">
-        <!-- MDN says its bad practice to use the onclick attribute,
-        but we're using it anyways coz its easy :)-->
         <button onclick="send_friend_request()">Send request</button>
     </section>
   
-
     <!-- The (message) input box is set to display: none initially, 
     this means the input box is "invisible" initially-->
     <section id="input_box" style="display: none" >
@@ -82,11 +125,6 @@
         <input id="message" placeholder="message">
         <button onclick="send()">Send</button>
         <button onclick="leave()">Leave Room</button>
-    </section>
-
-    <section id="response_box" style="display: none" >
-        <button onclick="accept()">Accept</button>
-        <button onclick="decline()">Decline</button>
     </section>
 
 </main>
@@ -123,8 +161,6 @@
         // we'll display the message box, instead of the "Chat with: " box
         $("#chat_box").hide();
         $("#input_box").show();
-        $("#friend_requests_box").show();
-        $("#response_box").hide();
         room_id = parseInt(Cookies.get("room_id"));
     })
     
@@ -143,18 +179,13 @@
     socket.on("incoming", (msg, color="black") => {
         add_message(msg, color);
     })
-    
-    socket.on("incoming_request", (msg, color="black", sender_name) => {
-        add_message(msg, color);
-        var sender_name = sender_name;
-        $("#response_box").show();
-    })
 
-    function accept() {
-        socket.emit("accept", username, sender_name, room_id);
-        $("#chat_box").hide();
-        $("#response_box").hide();
-        $("#input_box").show();
+    function accept(friend_username) {
+        socket.emit("accept", username, friend_username);
+    }
+
+    function decline(friend_username) {
+        socket.emit("decline", username, friend_username);
     }
 
     // we'll send the message to the server by emitting a "send" event
@@ -165,9 +196,9 @@
     } 
 
     // we emit a join room event to the server to join a room
-    function join_room() {
+    function join_room(receiver) {
        
-        let receiver = $("#receiver").val();
+        //let receiver = $("#receiver").val();
 
         // pass in the receiver of our message to the server
         // as well as the current user's username
@@ -185,7 +216,7 @@
             Cookies.set("room_id", room_id);
 
             // now we'll show the input box, so the user can input their message
-            $("#chat_box").hide();
+           // $("#chat_box").hide();
             $("#input_box").show();
         });
      
@@ -198,21 +229,7 @@
 
         // pass in the receiver of our message to the server
         // as well as the current user's username
-        socket.emit("send_request", username, new_friend, (res) => {
-            // res is a string with the error message if the error occurs
-            // this  is a pretty bad way of doing error handling, but watevs
-            if (typeof res != "number") {
-                alert(res);
-                return;
-            }
-
-            // set the room id variable to the room id returned by the server
-            room_id = res;
-            let sender_name = sender_name
-            Cookies.set("username", new_friend);
-            Cookies.set("room_id", room_id);
-
-        });
+        socket.emit("send_request", username, new_friend)
     }
 
 
