@@ -30,17 +30,17 @@ class User(Base):
     username: Mapped[str] = mapped_column(String, primary_key=True)
     password: Mapped[str] = mapped_column(String(60)) #hash (kdf) of password
     salt: Mapped[str] = mapped_column(String)
-    attempts: Mapped[int] = mapped_column(INTEGER, default=0) #number of failed login attempts
+    #attempts: Mapped[int] = mapped_column(INTEGER, default=0) #number of failed login attempts
 
     #status: Mapped[bool] = mapped_column(Boolean) #Online if True
 
-    friends: Mapped[List["Friend"]] = relationship(back_populates="user") #accepted friend requests
+    friends: Mapped[List["Friend"]] = relationship(back_populates="user") #list of friends
     requests: Mapped[List["Request"]] = relationship(back_populates="user") #received friend requests
 
-    def __init__(self):
-        self.attempts = 0
+    #def __init__(self):
+        #self.attempts = 0
 
-
+# existing friends
 class Friend(Base):
     __tablename__ = "friend"
 
@@ -82,6 +82,9 @@ class Request():
 #number of failed login attempts for a user
 class Attempts():
     def __init__(self):
+        #dictionary keeps track of each user's current failed attempts
+        #key = username
+        #value = number of failed attempts since last successful login
         self.dict: Dict[str, int] = {}
 
     def set_failed(self, user: str):

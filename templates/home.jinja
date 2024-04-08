@@ -149,6 +149,11 @@
         }
     })
 
+     $("#new_friend").on("keyup", (e) => {
+        if (e.key == "Enter") {
+            send_friend_request();
+        }
+    })
 
     $(document).ready(() => {
         // room_id is undefined if the user hasn't joined a room
@@ -159,7 +164,7 @@
 
         // the user has already joined an existing room
         // we'll display the message box, instead of the "Chat with: " box
-        $("#chat_box").hide();
+       // $("#chat_box").hide();
         $("#input_box").show();
         room_id = parseInt(Cookies.get("room_id"));
     })
@@ -239,7 +244,7 @@
         Cookies.remove("room_id");
         socket.emit("leave", username, room_id);
         $("#input_box").hide();
-        $("#chat_box").show();
+       // $("#chat_box").show();
     }
 
     // function to add a message to the message box

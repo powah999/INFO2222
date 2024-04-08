@@ -54,6 +54,10 @@ def join(sender_name, receiver_name):
     if sender is None:
         return "Unknown sender!"
 
+    receiver = db.get_user(receiver_name)
+    if receiver is None:
+        return "Unknown receiver!"
+    
     #check if person you're chatting with is your friend
     sender_friends = db.get_friends(sender_name)
 
@@ -66,10 +70,6 @@ def join(sender_name, receiver_name):
     if not exists:
         return f"{ receiver_name } is not your friend!"
         
-    receiver = db.get_user(receiver_name)
-    if receiver is None:
-        return "Unknown receiver!"
-    
     room_id = room.get_room_id(receiver_name)
 
     # if the user is already inside of a room 
@@ -124,7 +124,7 @@ def send_request(sender_name, receiver_name):
     return room_id
 """
 
-
+#create pending and received request for sender and receiver respectively
 @socketio.on("send_request")
 def send_request(sender_name, receiver_name):
     
@@ -154,14 +154,18 @@ def send_request(sender_name, receiver_name):
     #add to receiver's sent requests
     db.add_request(receiver_name, sender_name, True)
 
+#accept friend request
 @socketio.on("accept")
 def accept(sender_name, receiver_name):
+    #remove sent and received requests from sender and receiver respectively
     db.remove_request(sender_name, receiver_name)
     db.remove_request(receiver_name, sender_name)
 
+    #add to friend list in both users
     db.add_friend(sender_name, receiver_name)
     db.add_friend(receiver_name, sender_name)
 
+#decline friend request
 @socketio.on("decline")
 def decline(sender_name, receiver_name):
     db.remove_request(sender_name, receiver_name)

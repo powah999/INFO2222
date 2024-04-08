@@ -42,7 +42,7 @@ def add_friend(username, friend_username):
         session.commit()
 
 #add friend request to user's requests list
-def add_request(username, friend_username, is_received):
+def add_request(username, friend_username, is_received: bool):
     with Session(engine) as session:
         #user = session.get(User, username)
         new_request = Request(username=username, friend_username=friend_username, is_received=is_received)
