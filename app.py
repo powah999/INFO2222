@@ -126,5 +126,5 @@ def home():
 
 if __name__ == '__main__':
     app.debug=True
-    socketio.run(app)
+    socketio.run(app, ssl_context=('/root/certs/myCA.pem', '/root/certs/myCA.key'))
 
