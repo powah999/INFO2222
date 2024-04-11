@@ -82,20 +82,7 @@ def signup_user():
         abort(404)
     username = request.json.get("username")
     password = request.json.get("password")
-    
-    #add username and password security requirements here
-    if len(password) < 12:
-        return "Password length must be at least 12 characters!"
-    
-    if set(password).difference(digits):
-        return "Password requires at least one numeric character!"
-    
-    if set(password).difference(ascii_letters):
-        return "Password requires at least one alphabetic character!"
-    
-    if set(password).difference(punctuation):
-        return "Password requires at least one special character!"
-    
+
     #hash password
     password = password.encode('ascii')
 

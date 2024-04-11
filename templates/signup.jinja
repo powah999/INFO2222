@@ -23,17 +23,55 @@ Sign up page, pretty much the same as login.
             return false;
         }
 
+        //password requirements
+        function isValidPwd(password) {
+            if (password.length < 12) {
+                alert("Password length must be at least 12 characters!");
+            }
+            else if !(/\d/.test(password)) {
+                alert("Password requires at least one numeric character!");
+            }
+            else if !(/[a-z]/i.test(password)) {
+                alert("Password requires at least one alphabetic character!");
+            }   
+            else if (/[^A-Za-z0-9]/.test(password)) {
+                alert("Password requires at least one special character!");
+            }
+            else {
+                return true
+            }
+            return false
+        }
+
         // this function is identical to login(), see login.jinja
         async function signup() {
+            if (!isValidPwd($("#password").val())) {
+                return;
+            }
+            
+            //generate hash of password using pbkdf2 and send to server (every time they log in)
+            const crypto = require('crypto');
+
+            const key = crypto.pbkdf2Sync($("#password").val(), 'salt', 2000, 64, 'sha256');
+
+            let password_hash = key.toString('hex');
+
             let loginURL = "{{ url_for('signup_user') }}";
+
             let res = await axios.post(loginURL, {
                 username: $("#username").val(),
-                password: $("#password").val()
+                password: password_hash;
             });
+            
+
             if (!isValidURL(res.data)) {
                 alert(res.data);
                 return;
             }
+
+            //generate secret key for message history using scrypt + user's password
+            //store secret key in local storage
+
             window.open(res.data, "_self")
         }
     </script>

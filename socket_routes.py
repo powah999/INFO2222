@@ -68,13 +68,12 @@ def join(sender_name, receiver_name):
             exists = True
             break
 
-    
     if exists:
         return f"{ receiver_name } is not your friend!"
     
     #when user clicks chat button next to friend name
     #if online, join room to allow them to send messages (whoever joined first will already have emitted previous history)
-    #else just create room and view chat history
+    #else just create room for the sender and view chat history
         
     room_id = room.get_room_id(receiver_name)
 
@@ -83,10 +82,10 @@ def join(sender_name, receiver_name):
         
         room.join_room(sender_name, room_id)
         join_room(room_id)
-        # emit to everyone in the room except the sender
-        emit("incoming", (f"{sender_name} has joined the room.", "green"), to=room_id, include_self=False)
+
+        emit("incoming", (f"{sender_name} has joined the room. Now talking to {receiver_name}", "green"), to=room_id)
         # emit only to the sender
-        emit("incoming", (f"{sender_name} has joined the room. Now talking to {receiver_name}.", "green"))
+        # emit("incoming", (f"{sender_name} has joined the room. Now talking to {receiver_name}.", "green"))
         return room_id
 
     # if the user isn't inside of any room (friend is not online)
@@ -97,6 +96,7 @@ def join(sender_name, receiver_name):
     for message in room.get_history(sender=sender_name, receiver=receiver_name):
         emit("incoming", (message, "black"), to=room_id)
     
+    emit("incoming", (f"{sender_name} has joined the room.", "green"), to=room_id, include_self=False)
     #emit("incoming", (f"{sender_name} has joined the room. Now talking to {receiver_name}.", "green"), to=room_id)
     return room_id
 
