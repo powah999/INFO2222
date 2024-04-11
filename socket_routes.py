@@ -45,7 +45,8 @@ def disconnect():
 @socketio.on("send")
 def send(username, message, room_id):
     emit("incoming", (f"{username}: {message}"), to=room_id)
-    
+    room.add_message(f"{username}: {message}", username, room.get_receiver(username, room_id))
+
 # join room event handler
 # sent when the user joins a room
 @socketio.on("join")
@@ -67,12 +68,17 @@ def join(sender_name, receiver_name):
             exists = True
             break
 
-    if not exists:
+    
+    if exists:
         return f"{ receiver_name } is not your friend!"
+    
+    #when user clicks chat button next to friend name
+    #if online, join room to allow them to send messages (whoever joined first will already have emitted previous history)
+    #else just create room and view chat history
         
     room_id = room.get_room_id(receiver_name)
 
-    # if the user is already inside of a room 
+    # if the user is already inside of a room (friend is online)
     if room_id is not None:
         
         room.join_room(sender_name, room_id)
@@ -83,12 +89,15 @@ def join(sender_name, receiver_name):
         emit("incoming", (f"{sender_name} has joined the room. Now talking to {receiver_name}.", "green"))
         return room_id
 
-    # if the user isn't inside of any room, 
-    # perhaps this user has recently left a room
-    # or is simply a new user looking to chat with someone
-    room_id = room.create_room(sender_name, receiver_name)
+    # if the user isn't inside of any room (friend is not online)
+    room_id = room.create_room(sender_name, None)
     join_room(room_id)
-    emit("incoming", (f"{sender_name} has joined the room. Now talking to {receiver_name}.", "green"), to=room_id)
+    
+    #show chat history
+    for message in room.get_history(sender=sender_name, receiver=receiver_name):
+        emit("incoming", (message, "black"), to=room_id)
+    
+    #emit("incoming", (f"{sender_name} has joined the room. Now talking to {receiver_name}.", "green"), to=room_id)
     return room_id
 
 # leave room event handler
@@ -165,6 +174,9 @@ def accept(sender_name, receiver_name):
     db.add_friend(sender_name, receiver_name)
     db.add_friend(receiver_name, sender_name)
 
+    #create empty chat history
+    room.create_history(sender_name, receiver_name)
+
 #decline friend request
 @socketio.on("decline")
 def decline(sender_name, receiver_name):
@@ -172,13 +184,3 @@ def decline(sender_name, receiver_name):
     db.remove_request(receiver_name, sender_name)
 
 #remove pending request option?
-
-
-"""
-@socketio.on("accept")
-def accept(username, sender_name, room_id):
-    db.add_friend(username, sender_name)
-    db.add_friend(sender_name, username)
-
-    emit("incoming", (f"Friend request accepted! {username} and {sender_name} are now friends!", "black"), to=room_id)
-"""

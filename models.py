@@ -64,6 +64,18 @@ class Request(Base):
 
     user: Mapped["User"] = relationship(back_populates="requests")
 
+class Message(Base):
+    __tablename__ = "message"
+
+
+#every user and friend has a corresponding message history / room id
+#every room id has 2 users associated with it + their chat history
+#when 2 users first start chatting, chat history is empty. Append/log every message to chat history as they are sent
+#when user clicks chat button next to friend name, join room checks if online to allow them to send messages, else just view chat history
+
+
+
+
 """
 class Request():
     def __init__(self):
@@ -86,7 +98,7 @@ class Attempts():
         #key = username
         #value = number of failed attempts since last successful login
         self.dict: Dict[str, int] = {}
-
+        
     def set_failed(self, user: str):
         self.dict[user] += 1
     
@@ -121,11 +133,17 @@ class Room():
         # for example self.dict["John"] -> gives you the room id of 
         # the room where John is in
         self.dict: Dict[str, int] = {}
+        
+        #every chat session (room id) between 2 users has a chat history
+        self.history: Dict[set, list] = {} #key = 2 users #value = message history
 
-    def create_room(self, sender: str, receiver: str) -> int:
+    #create room id when friend is not online
+    def create_room(self, sender: str, receiver=None) -> int: #remove receiver parameter later
         room_id = self.counter.get()
-        self.dict[sender] = room_id
-        self.dict[receiver] = room_id
+        if receiver is None: #if receiver is not online
+            self.dict[sender] = room_id
+        else:
+            self.dict[receiver] = room_id
         return room_id
     
     def join_room(self,  sender: str, room_id: int) -> int:
@@ -142,3 +160,29 @@ class Room():
             return None
         return self.dict[user]
     
+    #gets the second user in a chat room 
+    def get_receiver(self, sender: str, room_id: int):
+        for user, id in self.dict.values():
+            if id == room_id and user != sender:
+                return user
+    
+    # get message history between 2 users
+    def get_history(self, sender: str, receiver: str):
+        if {sender, receiver} not in self.history.keys():
+            return None
+        return self.history[{sender, receiver}]
+    
+    # add new message to history
+    def add_message(self, message: str, sender: str, receiver: str):
+        if {sender, receiver} not in self.history.keys():
+            return None
+        self.history[{sender, receiver}].append(message)
+
+    # delete history between 2 users
+    def del_history(self, sender: str, receiver: str): 
+        if {sender, receiver} not in self.history.keys():
+            return None
+        del self.history[{sender, receiver}]
+
+    def create_history(self, sender: str, receiver: str):
+        self.dict[{sender, receiver}] = [] #make room_id first element?
