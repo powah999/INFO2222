@@ -64,8 +64,6 @@ class Request(Base):
 
     user: Mapped["User"] = relationship(back_populates="requests")
 
-class Message(Base):
-    __tablename__ = "message"
 
 
 #every user and friend has a corresponding message history / room id

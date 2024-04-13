@@ -112,6 +112,5 @@ def home():
     return render_template("home.jinja", username=username, friends=request.args.get("friends"), received=db.get_friend_requests(username, True), pending=db.get_friend_requests(username, False))
 
 if __name__ == '__main__':
-    app.debug=True
-    socketio.run(app, ssl_context=('/root/certs/myCA.pem', '/root/certs/myCA.key'))
+    socketio.run(app, host="localhost", port=5000 ,debug=True,ssl_context=('localhost.crt', 'localhost.key'))
 
