@@ -94,7 +94,7 @@ def join(sender_name, receiver_name):
     
     #show chat history
     for message in room.get_history(sender=sender_name, receiver=receiver_name):
-        emit("incoming", (message, "black"), to=room_id)
+        emit("incoming_history", (message, "black"), to=room_id)
     
     emit("incoming", (f"{sender_name} has joined the room.", "green"), to=room_id, include_self=False)
     #emit("incoming", (f"{sender_name} has joined the room. Now talking to {receiver_name}.", "green"), to=room_id)

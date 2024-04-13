@@ -83,7 +83,7 @@ def signup_user():
     username = request.json.get("username")
     password = request.json.get("password")
 
-    #hash password
+    #hash received password
     password = password.encode('ascii')
 
     salt = bcrypt.gensalt()
@@ -92,7 +92,7 @@ def signup_user():
     if db.get_user(username) is None:
         db.insert_user(username, hash, salt)
         attempts.reset(username)
-        return url_for('home', username=username, friends=request.json.get("friends"))
+        return url_for('home', username=username, friends=request.json.get("friends"), received=db.get_friend_requests(username, True), pending=db.get_friend_requests(username, False))
     return "Error: User already exists!"
 
 
@@ -112,5 +112,5 @@ def home():
     return render_template("home.jinja", username=username, friends=request.args.get("friends"), received=db.get_friend_requests(username, True), pending=db.get_friend_requests(username, False))
 
 if __name__ == '__main__':
-    socketio.run(app, host="localhost", port=5000 ,debug=True,ssl_context=('localhost.crt', 'localhost.key'))
+    socketio.run(app, host="localhost", port=5000 ,debug=True, ssl_context=('localhost.crt', 'localhost.key'))
 

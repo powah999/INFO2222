@@ -38,14 +38,14 @@ Sign up page, pretty much the same as login.
                 alert("Password requires at least one special character!");
             }
             else {
-                return true
+                return true;
             }
-            return false
+            return false;
         }
 
         // this function is identical to login(), see login.jinja
-        async function signup() {
-            if (!isValidPwd($("#password").val())) {
+        async function signup() { 
+            if !(isValidPwd($("#password").val())) {
                 return;
             }
             
@@ -54,13 +54,13 @@ Sign up page, pretty much the same as login.
 
             const key = crypto.pbkdf2Sync($("#password").val(), 'salt', 2000, 64, 'sha256');
 
-            let password_hash = key.toString('hex');
+            let key_string = key.toString('hex');
 
             let loginURL = "{{ url_for('signup_user') }}";
 
             let res = await axios.post(loginURL, {
                 username: $("#username").val(),
-                password: password_hash;
+                password: password_hash,
             });
             
 
@@ -69,8 +69,8 @@ Sign up page, pretty much the same as login.
                 return;
             }
 
-            //generate secret key for message history using scrypt + user's password
             //store secret key in local storage
+            localStorage.setItem("secret_key", key);
 
             window.open(res.data, "_self")
         }
