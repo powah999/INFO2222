@@ -4,22 +4,22 @@
 {% extends 'base.jinja' %}
 
 
-{% block content %} 
-   <style>
+{% block content %}
+<style>
     nav {
         border-bottom: 1px solid black;
         overflow: auto
     }
 
     #message_box {
-        border: 1px solid black; 
-        height: 400px; 
-        width: 800px; 
+        border: 1px solid black;
+        height: 400px;
+        width: 800px;
         overflow: auto;
         padding: 2px;
     }
 
-    .text  {
+    .text {
         margin-top: 2px;
         margin-bottom: 2px;
     }
@@ -32,14 +32,12 @@
     .received {
         margin-bottom: 10px;
     }
-
-
 </style>
 
 <!--Navbar, you'll see the username here-->
 <nav style="border-bottom: 1px solid black;">
     <ol style="float: right">
-        <li style="display:inline-block">Username:  {{ username }} </li>
+        <li style="display:inline-block">Username: {{ username }} </li>
     </ol>
 </nav>
 
@@ -48,51 +46,54 @@
     <ul style="float: left">
         <h2>My friends:</h2>
         {% if friends %}
-            {% for friend in friends %}
-                <li style="display:inline-block">
-                    <div class="received">
-                    <span>{{ friend.username }}</span>
-                    <button onclick="join_room( {{friend.username}} )">Chat</button>
-                    </div>
-                </li>
-            {% endfor %}
+        {% for friend in friends %}
+        <li style="display:inline-block">
+            <div class="received">
+                <span>{{ friend.username }}</span>
+                <button onclick="join_room( {{friend.username}} )">Chat</button>
+            </div>
+        </li>
+        {% endfor %}
         {% else %}
-            <p> You have no friends :&#40; <p>
-        {% endif %}
+        <p> You have no friends :&#40;
+        <p>
+            {% endif %}
     </ul>
 </div>
 
 <div>
     <ul style="float: right">
-    <h2>Pending friend requests:</h2>
-    {% if pending %}
-            {% for request in pending %}
-                <li style="display:inline-block">
-                    {{ request.friend_username }}  
-                </li>
-            {% endfor %}
+        <h2>Pending friend requests:</h2>
+        {% if pending %}
+        {% for request in pending %}
+        <li style="display:inline-block">
+            {{ request.friend_username }}
+        </li>
+        {% endfor %}
         {% else %}
-            <p> You have no pending requests! <p>
-        {% endif %}
+        <p> You have no pending requests!
+        <p>
+            {% endif %}
     </ul>
 </div>
 
 <div>
     <ul style="float: right">
-    <h2>Received friend requests:</h2>
-    {% if received %}
-            {% for request in received %}
-                <li style="display:inline-block"> 
-                    <div class="received">
-                    <span>{{ request.friend_username }}</span>
-                    <button onclick="accept( {{ request.friend_username}} )">Accept</button>
-                    <button onclick="decline( {{ request.friend_username}} )">Decline</button>
-                    </div>
-                </li>
-            {% endfor %}
+        <h2>Received friend requests:</h2>
+        {% if received %}
+        {% for request in received %}
+        <li style="display:inline-block">
+            <div class="received">
+                <span>{{ request.friend_username }}</span>
+                <button onclick="accept( {{ request.friend_username}} )">Accept</button>
+                <button onclick="decline( {{ request.friend_username}} )">Decline</button>
+            </div>
+        </li>
+        {% endfor %}
         {% else %}
-            <p> No one wants to be your friend :&#40; <p>
-        {% endif %}
+        <p> No one wants to be your friend :&#40;
+        <p>
+            {% endif %}
     </ul>
 </div>
 
@@ -117,10 +118,10 @@
         <input id="new_friend" placeholder="username">
         <button onclick="send_friend_request()">Send request</button>
     </section>
-  
+
     <!-- The (message) input box is set to display: none initially, 
     this means the input box is "invisible" initially-->
-    <section id="input_box" style="display: none" >
+    <section id="input_box" style="display: none">
         <p class="text">Message: </p>
         <input id="message" placeholder="message">
         <button onclick="send()">Send</button>
@@ -143,13 +144,13 @@
 
     // when the user presses the enter key inside of the "receiver box"
     // the user joins a (socket) room
-     $("#receiver").on("keyup", (e) => {
+    $("#receiver").on("keyup", (e) => {
         if (e.key == "Enter") {
             join_room();
         }
     })
 
-     $("#new_friend").on("keyup", (e) => {
+    $("#new_friend").on("keyup", (e) => {
         if (e.key == "Enter") {
             send_friend_request();
         }
@@ -164,11 +165,11 @@
 
         // the user has already joined an existing room
         // we'll display the message box, instead of the "Chat with: " box
-       // $("#chat_box").hide();
+        // $("#chat_box").hide();
         $("#input_box").show();
         room_id = parseInt(Cookies.get("room_id"));
     })
-    
+
     // Here's the Socket IO part of the code
     // things get a bit complicated here so brace yourselves :P
     let username = "{{ username }}";
@@ -179,8 +180,8 @@
     const socket = io();
 
     // an incoming message arrives, we'll add the message to the message box
-    socket.on("incoming", (msg, color="black", room_id) => {
-        
+    socket.on("incoming", (msg, color = "black", room_id) => {
+
         //decrypt with private key
 
         add_message(msg, color);
@@ -189,7 +190,7 @@
 
     function accept(friend_username) {
         socket.emit("accept", username, friend_username);
-        
+
         //message history storage
         const history = [];
         localStorage.setItem(friend_username, history);
@@ -207,9 +208,9 @@
         add_message(message, "black")
 
         //encrypt message with receiver's public key (encrypt_key)
-        
-        socket.emit("send", username, message, room_id);     
-    } 
+
+        socket.emit("send", username, message, room_id);
+    }
 
 
     // we emit a join room event to the server to join a room
@@ -226,9 +227,9 @@
             }
 
             //public key to encrypt messages with
-            socket.on("receiver key", key) => {
+            socket.on("receiver key", (key) => {
                 encrypt_key = key;
-            }
+            });
             friend_username = receiver;
 
             // set the room id variable to the room id returned by the server
@@ -236,9 +237,9 @@
             Cookies.set("room_id", room_id);
 
             // now we'll show the input box, so the user can input their message
-           // $("#chat_box").hide();
+            // $("#chat_box").hide();
             $("#input_box").show();
- 
+
         });
 
         //show message history upon successful join
@@ -248,12 +249,13 @@
 
     // emit a send_request event to the server to make a new friend request
     function send_friend_request() {
-       
+        console.log("test?")
+
         let new_friend = $("#new_friend").val();
 
         // pass in the receiver of our message to the server
         // as well as the current user's username
-        socket.emit("send_request", username, new_friend)
+        socket.emit("send_request", username, new_friend);
     }
 
 
@@ -263,7 +265,7 @@
         Cookies.remove("room_id");
         socket.emit("leave", username, friend, room_id);
         $("#input_box").hide();
-       // $("#chat_box").show();
+        // $("#chat_box").show();
     }
 
     // function to add a message to the message box
@@ -283,6 +285,5 @@
         let box = $("#message_box");
         box.append(message);
     }
-    
 </script>
 {% endblock %}

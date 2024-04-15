@@ -106,7 +106,7 @@ def leave(username, friend, room_id):
 #create pending and received request for sender and receiver respectively
 @socketio.on("send_request")
 def send_request(sender_name, receiver_name):
-    
+    print("TESTING")
     receiver = db.get_user(receiver_name)
     if receiver is None:
         return "Unknown receiver!"

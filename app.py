@@ -51,11 +51,13 @@ def login_user():
     user = db.get_user(username)
     if user is None:
         return "Error: User does not exist!"
-    
+
     if attempts.is_blocked(username):
         return "Error: Your account has been blocked due to too many failed login attempts"
+
     
     #password verification
+    password = request.json.get("password").encode('utf-8')
     verify = bcrypt.kdf(password=password, salt=user.salt, desired_key_bytes=60, rounds=200)
     if verify != user.password:
         attempts.set_failed(username)
@@ -63,7 +65,6 @@ def login_user():
             return "Too many failed login attempts, your account has been blocked"
         
         return "Error: Password does not match!"
-
     attempts.reset(username)
 
     return url_for('home', username=request.json.get("username"), friends=request.json.get("friends"), received=db.get_friend_requests(username, True), pending=db.get_friend_requests(username, False))
@@ -78,9 +79,13 @@ def signup():
 def signup_user():
     if not request.is_json:
         abort(404)
+
     username = request.json.get("username")
     password = request.json.get("password")
     public = request.json.get("public")
+    print(username)
+    print(password)
+    print(public)
 
     #hash received password
     password = password.encode('ascii')
@@ -89,8 +94,8 @@ def signup_user():
     hash = bcrypt.kdf(password=password, salt=salt, desired_key_bytes=60, rounds=200)
 
     if db.get_user(username) is None:
-        db.insert_user(username, hash, salt)
-        public_keys.add_key(username, public)
+        db.insert_user(username, hash, salt, public)
+        # public_keys.add_key(username, public)
         attempts.reset(username)
         return url_for('home', username=username, friends=request.json.get("friends"), received=db.get_friend_requests(username, True), pending=db.get_friend_requests(username, False))
     return "Error: User already exists!"

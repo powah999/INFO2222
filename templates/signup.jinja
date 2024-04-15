@@ -4,88 +4,97 @@ Sign up page, pretty much the same as login.
 {% extends 'base.jinja' %}
 
 
-{% block content %} 
-    <h1>Sign Up</h1>
-    <p>Username</p>
-    <input id="username"/>
-    <p>Password</p>
-    <input id="password" type="password"/>
-    <button onclick="signup()">Sign up</button>
+{% block content %}
+<h1>Sign Up</h1>
+<p>Username</p>
+<input id="username" />
+<p>Password</p>
+<input id="password" type="password" />
+<button onclick="signup()">Sign up</button>
 
-    <script>
-        function isValidURL(string) {
-            if (string.length == 0) {
-                return false;
-            }
-            if (string[0] == "/") {
-                return true;
-            }
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cryptico/0.0.1343522940/cryptico.min.js"></script>
+<script>
+    function isValidURL(string) {
+        if (string.length == 0) {
             return false;
         }
+        if (string[0] == "/") {
+            return true;
+        }
+        return false;
+    }
 
-        //password requirements
-        function isValidPwd(password) {
-            if (password.length < 12) {
-                alert("Password length must be at least 12 characters!");
-            }
-            else if (!/\d/.test(password)) {
-                alert("Password requires at least one numeric character!");
-            }
-            else if (!/[a-z]/i.test(password)) {
-                alert("Password requires at least one alphabetic character!");
-            }   
-            else if (/[^A-Za-z0-9]/.test(password)) {
-                alert("Password requires at least one special character!");
-            }
-            else {
-                return true;
-            }
-            return false;
+    //password requirements
+    function isValidPwd(password) {
+        if (password.length < 12) {
+            alert("Password length must be at least 12 characters!");
+        }
+        else if (!/\d/.test(password)) {
+            alert("Password requires at least one numeric character!");
+        }
+        else if (!/[a-z]/i.test(password)) {
+            alert("Password requires at least one alphabetic character!");
+        }
+        else if (/[^A-Za-z0-9]/.test(password)) {
+            alert("Password requires at least one special character!");
+        }
+        else {
+            return true;
+        }
+        return false;
+    }
+
+    // this function is identical to login(), see login.jinja
+    async function signup() {
+
+        var password = $("#password").val();
+
+        if (!isValidPwd(password)) {
+            return;
         }
 
-        // this function is identical to login(), see login.jinja
-        async function signup() { 
-            if (!isValidPwd($("#password").val())) {
-                return;
-            }
-            
-            //generate hash of password using pbkdf2 and transmit to server
-            const crypto = require('crypto');
-            //salt
-            crypto.randomBytes(64, (err, salt) => {
-                if (err) {
-                    // Prints error
-                    console.log(err);
-                    return;
-                }
-            });
-            //hash
-            const hashed_password = crypto.pbkdf2Sync($("#password").val(), salt, 2000, 64, 'sha256');
-            let hash_string = hashed_password.toString('hex');
+        //password hash
+        var hash = CryptoJS.SHA3(password, { outputLength: 256 }).toString(CryptoJS.enc.Hex);
 
-            //private/public key pair generation
+        //salt
+        var salt = CryptoJS.lib.WordArray.random(128 / 8);
 
+        //PBKDF2 key object
+        var derivedKey = CryptoJS.PBKDF2(password, salt, {
+            keySize: 256 / 32,
+            iterations: 1000
+        });
 
-            let loginURL = "{{ url_for('signup_user') }}";
+        //PBKDF2 key string format
+        var stringKey = derivedKey.toString(CryptoJS.enc.Base64);
 
-            let res = await axios.post(loginURL, {
-                username: $("#username").val(),
-                password: hash_string,
-                public: 
-            });
-            
-            if (!isValidURL(res.data)) {
-                alert(res.data);
-                return;
-            }
+        var privateKey = cryptico.generateRSAKey(stringKey, 2048);
+        var publicKey = cryptico.publicKeyString(privateKey);
 
-            //store password in local storage?
-            localStorage.setItem("password", hashed_password);
+        console.log("Derived Key:", stringKey);
+        console.log("public key: ", publicKey)
 
-            //store private key in local storage (encrypt key?)
-            //localStorage.setItem("private", key)
+        let loginURL = "{{ url_for('signup_user') }}";
 
-            window.open(res.data, "_self")
+        let res = await axios.post(loginURL, {
+            username: $("#username").val(),
+            password: hash,
+            public: publicKey,
+        });
+
+        if (!isValidURL(res.data)) {
+            alert(res.data);
+            return;
         }
-    </script>
+
+        //store derived and private key in local storage?
+        localStorage.setItem("derived", derivedKey);
+        localStorage.setItem("private", privateKey);
+
+
+
+        window.open(res.data, "_self")
+    }
+</script>
 {% endblock %}

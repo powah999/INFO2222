@@ -10,7 +10,7 @@ Prisma docs also looks so much better in comparison
 or use SQLite, if you're not into fancy ORMs (but be mindful of Injection attacks :) )
 '''
 
-from sqlalchemy import String, ForeignKey, INTEGER, Boolean
+from sqlalchemy import String, ForeignKey, INTEGER, Boolean, Column
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from typing import Dict, List
 
@@ -30,6 +30,7 @@ class User(Base):
     username: Mapped[str] = mapped_column(String, primary_key=True)
     password: Mapped[str] = mapped_column(String(60)) #hash (kdf) of password
     salt: Mapped[str] = mapped_column(String)
+    public: Mapped[str] = mapped_column(String)
     #attempts: Mapped[int] = mapped_column(INTEGER, default=0) #number of failed login attempts
 
     #status: Mapped[bool] = mapped_column(Boolean) #Online if True
@@ -95,23 +96,28 @@ class Attempts():
         #dictionary keeps track of each user's current failed attempts
         #key = username
         #value = number of failed attempts since last successful login
-        self.dict: Dict[str, int] = {}
+        self.dict = {}
         
     def set_failed(self, user: str):
-        self.dict[user] += 1
+        if user in self.dict:
+
+            self.dict[user] += 1
+        else: 
+
+            self.dict[user] = 0
     
     def reset(self, user: str):
         self.dict[user] = 0
     
     def get_attempts(self, user: str):
-        if user not in self.user.keys():
+        if user not in self.dict:
             return
         return self.dict[user]
     
     def is_blocked(self, user: str):
-        if user not in self.attempts.keys():
-            return
-        return self.dict[user] > 3
+        if user not in self.dict:
+            return False
+        return (self.dict[user] > 3)
     
 
 # stateful counter used to generate the room id
