@@ -26,8 +26,8 @@ socketio = SocketIO(app)
 # don't remove this!!
 import socket_routes
 
-
 attempts = db.Attempts()
+public_keys = db.Public()
 
 # index page
 @app.route("/")
@@ -47,7 +47,6 @@ def login_user():
 
     username = request.json.get("username")
     password = request.json.get("password")
-   # status = request.json.get("status")
 
     user = db.get_user(username)
     if user is None:
@@ -61,8 +60,7 @@ def login_user():
     if verify != user.password:
         attempts.set_failed(username)
         if attempts.is_blocked(username):
-            # log when account was blocked --> unblock in an hour?
-            return "Too many failed login attempts, your account has been blocked temporarily"
+            return "Too many failed login attempts, your account has been blocked"
         
         return "Error: Password does not match!"
 
@@ -82,6 +80,7 @@ def signup_user():
         abort(404)
     username = request.json.get("username")
     password = request.json.get("password")
+    public = request.json.get("public")
 
     #hash received password
     password = password.encode('ascii')
@@ -91,10 +90,10 @@ def signup_user():
 
     if db.get_user(username) is None:
         db.insert_user(username, hash, salt)
+        public_keys.add_key(username, public)
         attempts.reset(username)
         return url_for('home', username=username, friends=request.json.get("friends"), received=db.get_friend_requests(username, True), pending=db.get_friend_requests(username, False))
     return "Error: User already exists!"
-
 
 # handler when a "404" error happens
 @app.errorhandler(404)

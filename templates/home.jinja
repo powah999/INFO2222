@@ -179,26 +179,20 @@
     const socket = io();
 
     // an incoming message arrives, we'll add the message to the message box
-    socket.on("incoming", (msg, color="black") => {
-        add_message(msg, color);
-    })
-
-    //decrypt incoming message history with secret key
-    socket.on("incoming_history", (msg, colour="black") => {
-        const crypto = require('crypto');
-
-        let key = localStorage.getItem("secret_key");
-        let iv = localStorage.getItem(msg);
+    socket.on("incoming", (msg, color="black", room_id) => {
         
-        let cipher = crypto.createDecipheriv("aes-256-cbc", key, iv);
-        let cipher_text = cipher.update(msg);
-        cipher_text += cipher.final('hex');
+        //decrypt with private key
 
-        add_message(msg, color); 
+        add_message(msg, color);
+
     })
 
     function accept(friend_username) {
         socket.emit("accept", username, friend_username);
+        
+        //message history storage
+        const history = [];
+        localStorage.setItem(friend_username, history);
     }
 
     function decline(friend_username) {
@@ -209,26 +203,17 @@
     function send() {
         let message = $("#message").val();
         $("#message").val("");
-        
-        //encrypt message before transmitting to server
-        const crypto = require('crypto');
 
-        let key = localStorage.getItem("secret_key");
-        let iv = crypto.randomBytes(16);
+        add_message(message, "black")
 
-        let cipher = crypto.createCipheriv("aes-256-cbc", key, iv);
-        let cipher_text = cipher.update(message);
-        cipher_text += cipher.final('hex');
+        //encrypt message with receiver's public key (encrypt_key)
         
-        //localStorage.setItem(encrypted text, tup);
-        
-        socket.emit("send", username, message, room_id);  
+        socket.emit("send", username, message, room_id);     
     } 
+
 
     // we emit a join room event to the server to join a room
     function join_room(receiver) {
-       
-        //let receiver = $("#receiver").val();
 
         // pass in the receiver of our message to the server
         // as well as the current user's username
@@ -240,16 +225,25 @@
                 return;
             }
 
+            //public key to encrypt messages with
+            socket.on("receiver key", key) => {
+                encrypt_key = key;
+            }
+            friend_username = receiver;
+
             // set the room id variable to the room id returned by the server
             room_id = res;
-            
             Cookies.set("room_id", room_id);
 
             // now we'll show the input box, so the user can input their message
            // $("#chat_box").hide();
             $("#input_box").show();
+ 
         });
-     
+
+        //show message history upon successful join
+        const history = localStorage.getItem(friend_username);
+        history.forEach(show_history)
     }
 
     // emit a send_request event to the server to make a new friend request
@@ -267,7 +261,7 @@
     // emits a "leave" event, telling the server that we want to leave the room
     function leave() {
         Cookies.remove("room_id");
-        socket.emit("leave", username, room_id);
+        socket.emit("leave", username, friend, room_id);
         $("#input_box").hide();
        // $("#chat_box").show();
     }
@@ -278,6 +272,16 @@
         let box = $("#message_box");
         let child = $(`<p style="color:${color}; margin: 0px;"></p>`).text(message);
         box.append(child);
+
+        //add message to message history
+        const history = localStorage.getItem(friend_username);
+        history.push(child);
+    }
+
+    //display plain text message history when a user joins a room 
+    function show_history(message) {
+        let box = $("#message_box");
+        box.append(message);
     }
     
 </script>

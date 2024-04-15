@@ -123,47 +123,76 @@ class Counter():
         self.counter += 1
         return self.counter
 
+#dictionary to store public keys for all users
+class Public():
+    def __init__(self):
+        #key = string
+        #value = public key
+        self.keys: Dict[str, str]
+
+    def add_key(self, username, key):
+        self.keys[username] = key
+
+    def get_key(self, username):
+        if username not in self.keys.keys():
+            return
+        
+        return self.keys[username]
+  
+
 # Room class, used to keep track of which username is in which room
 class Room():
     def __init__(self):
         self.counter = Counter()
-        # dictionary that maps the username to the room id
-        # for example self.dict["John"] -> gives you the room id of 
-        # the room where John is in
+        # dictionary that maps an online user to a room_id to join a room 
         self.dict: Dict[str, int] = {}
+        # dictionary that maps the 2 users/friends to the room id
+        # for example self.dict[{"John", "Bob"}] -> gives you the room id of 
+        # the room where John/Bob will chat
+        self.room_id: Dict[set, int] = {}
         
         #every chat session (room id) between 2 users has a chat history
         self.history: Dict[set, list] = {} #key = 2 users #value = message history
 
     #create room id when friend is not online
-    def create_room(self, sender: str, receiver=None) -> int: #remove receiver parameter later
+    def create_room(self, sender: str, receiver: str) -> int:
         room_id = self.counter.get()
-        if receiver is None: #if receiver is not online
-            self.dict[sender] = room_id
-        else:
-            self.dict[receiver] = room_id
+        self.dict[sender] = room_id
+        self.room_id[{sender, receiver}] = room_id
         return room_id
     
-    def join_room(self,  sender: str, room_id: int) -> int:
-        self.dict[sender] = room_id
+    def join_room(self,  user: str, room_id: int) -> int:
+        self.dict[user] = room_id
 
     def leave_room(self, user):
         if user not in self.dict.keys():
             return
+        
+        room_id = self.dict[user]
         del self.dict[user]
 
-    # gets the room id from a user
-    def get_room_id(self, user: str):
-        if user not in self.dict.keys():
+        if room_id not in self.dict.values():
+            #both users left room, remove session id
+            for user_1, user_2, id in self.room_id.values():
+                if id == room_id:
+                    del self.room_id[{user_1, user_2}]
+                    break
+
+    # gets the room id from 2 users/friends
+    def get_room_id(self, sender: str, receiver: str):
+        if {sender, receiver} not in self.room_id.keys():
             return None
-        return self.dict[user]
+        return self.room_id[{sender, receiver}]
     
-    #gets the second user in a chat room 
-    def get_receiver(self, sender: str, room_id: int):
-        for user, id in self.dict.values():
-            if id == room_id and user != sender:
-                return user
-    
+    def get_receiver(self, username, room_id):
+         for user_1, user_2, id in self.room_id.values():
+                if id == room_id:
+                    if username == user_1:
+                        return user_2
+                    elif username == user_2:
+                        return user_1
+
+
     # get message history between 2 users
     def get_history(self, sender: str, receiver: str):
         if {sender, receiver} not in self.history.keys():

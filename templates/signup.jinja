@@ -13,7 +13,7 @@ Sign up page, pretty much the same as login.
     <button onclick="signup()">Sign up</button>
 
     <script>
-         function isValidURL(string) {
+        function isValidURL(string) {
             if (string.length == 0) {
                 return false;
             }
@@ -28,10 +28,10 @@ Sign up page, pretty much the same as login.
             if (password.length < 12) {
                 alert("Password length must be at least 12 characters!");
             }
-            else if !(/\d/.test(password)) {
+            else if (!/\d/.test(password)) {
                 alert("Password requires at least one numeric character!");
             }
-            else if !(/[a-z]/i.test(password)) {
+            else if (!/[a-z]/i.test(password)) {
                 alert("Password requires at least one alphabetic character!");
             }   
             else if (/[^A-Za-z0-9]/.test(password)) {
@@ -45,32 +45,45 @@ Sign up page, pretty much the same as login.
 
         // this function is identical to login(), see login.jinja
         async function signup() { 
-            if !(isValidPwd($("#password").val())) {
+            if (!isValidPwd($("#password").val())) {
                 return;
             }
             
-            //generate hash of password using pbkdf2 and send to server (every time they log in)
+            //generate hash of password using pbkdf2 and transmit to server
             const crypto = require('crypto');
+            //salt
+            crypto.randomBytes(64, (err, salt) => {
+                if (err) {
+                    // Prints error
+                    console.log(err);
+                    return;
+                }
+            });
+            //hash
+            const hashed_password = crypto.pbkdf2Sync($("#password").val(), salt, 2000, 64, 'sha256');
+            let hash_string = hashed_password.toString('hex');
 
-            const key = crypto.pbkdf2Sync($("#password").val(), 'salt', 2000, 64, 'sha256');
+            //private/public key pair generation
 
-            let key_string = key.toString('hex');
 
             let loginURL = "{{ url_for('signup_user') }}";
 
             let res = await axios.post(loginURL, {
                 username: $("#username").val(),
-                password: password_hash,
+                password: hash_string,
+                public: 
             });
             
-
             if (!isValidURL(res.data)) {
                 alert(res.data);
                 return;
             }
 
-            //store secret key in local storage
-            localStorage.setItem("secret_key", key);
+            //store password in local storage?
+            localStorage.setItem("password", hashed_password);
+
+            //store private key in local storage (encrypt key?)
+            //localStorage.setItem("private", key)
 
             window.open(res.data, "_self")
         }

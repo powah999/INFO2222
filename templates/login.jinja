@@ -37,11 +37,16 @@
             // gives us -> "http://blabla/login/user"
             let loginURL = "{{ url_for('login_user') }}";
 
+            //send hashed input to server
+            const crypto = require('crypto');
+            const key = crypto.pbkdf2Sync($("#password").val(), 'salt', 2000, 64, 'sha256');
+            let key_string = key.toString('hex');
+
             // axios post is a fancy way of posting a request to the server,
             // we pass in the username and password here
             let res = await axios.post(loginURL, {
                 username: $("#username").val(),
-                password: $("#password").val(),
+                password: key_string
             });
 
             // if the server sends in an error message, alert() the error message
