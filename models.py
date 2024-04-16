@@ -30,7 +30,7 @@ class User(Base):
     username: Mapped[str] = mapped_column(String, primary_key=True)
     password: Mapped[str] = mapped_column(String(60)) #hash (kdf) of password
     salt: Mapped[str] = mapped_column(String)
-    public: Mapped[str] = mapped_column(String)
+    #public: Mapped[str] = mapped_column(String)
 
     #status: Mapped[bool] = mapped_column(Boolean) #Online if True
 
@@ -95,7 +95,7 @@ class Attempts():
         #dictionary keeps track of each user's current failed attempts
         #key = username
         #value = number of failed attempts since last successful login
-        self.dict = {}
+        self.dict: Dict[str, int] = {}
         
     def set_failed(self, user: str):
         if user in self.dict:
@@ -133,7 +133,7 @@ class Public():
     def __init__(self):
         #key = string
         #value = public key
-        self.keys: Dict[str, str]
+        self.keys: Dict[str, str] = {}
 
     def add_key(self, username, key):
         self.keys[username] = key
@@ -150,6 +150,8 @@ class Room():
     def __init__(self):
         self.counter = Counter()
         # dictionary that maps an online user to a room_id to join a room 
+        #key = user name
+        #value room_id
         self.dict: Dict[str, int] = {}
         # dictionary that maps the 2 users/friends to the room id
         # for example self.dict[{"John", "Bob"}] -> gives you the room id of 
@@ -178,9 +180,9 @@ class Room():
 
         if room_id not in self.dict.values():
             #both users left room, remove session id
-            for user_1, user_2, id in self.room_id.values():
+            for pair, id in self.room_id.items():
                 if id == room_id:
-                    del self.room_id[{user_1, user_2}]
+                    del self.room_id[pair]
                     break
 
     # gets the room id from 2 users/friends
@@ -190,13 +192,11 @@ class Room():
         return self.room_id[{sender, receiver}]
     
     def get_receiver(self, username, room_id):
-         for user_1, user_2, id in self.room_id.values():
+         for pair, id in self.room_id.items():
                 if id == room_id:
-                    if username == user_1:
-                        return user_2
-                    elif username == user_2:
-                        return user_1
-
+                    for user in pair:
+                        if username != user:
+                            return user
 
     # get message history between 2 users
     def get_history(self, sender: str, receiver: str):

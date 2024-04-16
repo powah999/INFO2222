@@ -93,8 +93,8 @@ def signup_user():
     hash = bcrypt.kdf(password=password, salt=salt, desired_key_bytes=60, rounds=200)
 
     if db.get_user(username) is None:
-        db.insert_user(username, hash, salt, public)
-        # public_keys.add_key(username, public)
+        db.insert_user(username, hash, salt)
+        public_keys.add_key(username, public)
         attempts.reset(username)
         return url_for('home', username=username, friends=request.json.get("friends"), received=db.get_received(username), pending=db.get_pending(username))
     return "Error: User already exists!"

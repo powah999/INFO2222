@@ -182,9 +182,10 @@
     // an incoming message arrives, we'll add the message to the message box
     socket.on("incoming", (msg, color = "black", room_id) => {
 
-        //decrypt with private key
+        let priv = localStorage.getItem("private");
+        let plain_text = cryptico.decrypt(msg, priv);
 
-        add_message(msg, color);
+        add_message(plain_text, color);
 
     })
 
@@ -216,10 +217,11 @@
         add_message(message, "black")
 
         //encrypt message with receiver's public key (encrypt_key)
+        let priv = localStorage.getItem("private")
+        let cipher_text = cryptico.encrypt(message, encrypt_key, priv)
 
         socket.emit("send", username, message, room_id);
     }
-
 
     // we emit a join room event to the server to join a room
     function join_room(receiver) {
@@ -268,7 +270,7 @@
                 return;
             }
 
-            //stop reloading to show new requests
+            //stop reloading to show new requests?
 
             //const url = new URL(window.location);
             //url.searchParams.set('pending', 'res');

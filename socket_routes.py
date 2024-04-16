@@ -12,11 +12,13 @@ try:
 except ImportError:
     from app import socketio
 
-from models import Room
+from models import Room, Public
+
 
 import db
 
 room = Room()
+keys = Public()
 
 # when the client connects to a socket
 # this event is emitted when the io() function is called in JS
@@ -71,7 +73,7 @@ def join(sender_name, receiver_name):
         return f"{ receiver_name } is not your friend!"
     
     #emit public key of receiver to sender
-    emit("receiver key", 'get key')
+    emit("receiver key", keys.get_key(receiver_name))
     
     #if friend is online, join room to allow them to send messages
     #else just create room for the sender and receiver and sender joins room
