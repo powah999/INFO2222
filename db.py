@@ -36,48 +36,67 @@ def get_user(username: str):
 #add friends to user's friendlist
 def add_friend(username, friend_username):
     with Session(engine) as session:
-        #user = session.get(User, username)
-        new_friend = Friend(username=friend_username, user_username=username)
-        session.add(new_friend)
+        user = session.get(User, username)
+        new = Friend(username=friend_username)
+        user.friends.append(new)
+        friend = session.get(User, friend_username)
+        new = Friend(username=username)
+        friend.friends.append(new)
+        session.merge(user)
+        session.merge(friend)
         session.commit()
+
 
 #add friend request to user's requests list
-def add_request(username, friend_username, is_received: bool):
+def make_request(sender, receiver):
     with Session(engine) as session:
-        #user = session.get(User, username)
-        new_request = Request(username=username, friend_username=friend_username, is_received=is_received)
-        session.add(new_request)
+        new_pending = Pending(sender=sender, receiver=receiver)
+        new_received = Received(sender=sender, receiver=receiver)
+        session.add(new_pending)
+        session.add(new_received)
         session.commit()
 
+        return new_pending
+
 #remove friend request from user's requests list
-def remove_request(username, friend_username):
+def remove_request(sender_name, receiver_name):
     with Session(engine) as session:
-        user = session.get(User, username)
+        sender = session.get(User, sender_name)
         to_remove = None
-        for request in user.requests:
-            if request.friend_username == friend_username:
+        for request in sender.pending:
+            if request.receiver == receiver_name:
+                to_remove = request
+                break
+        if to_remove != None:
+            sender.pending.remove(to_remove)
+            session.commit()
+        
+        receiver = session.get(User, receiver_name)
+        to_remove = None
+        for request in receiver.received:
+            if request.sender == sender_name:
                 to_remove = request
                 break
         
         if to_remove != None:
-            user.requests.remove(to_remove)
+            receiver.received.remove(to_remove)
             session.commit()
-
+        
+        
 #get a list of all of user's friends
 def get_friends(username: str):
     with Session(engine) as session:
         user = session.get(User, username)
         return user.friends
 
-#get a list of all of user's pending or received friend requests
-def get_friend_requests(username: str, received: bool):
+#get a list of all of user's pending friend requests
+def get_pending(username: str):
     with Session(engine) as session:
-        requests = []
         user = session.get(User, username)
-        for request in user.requests:
-            if received and request.is_received: #want all received requests
-                requests.append(request)
-            elif (not received) and (not request.is_received): #want all pending request
-                requests.append(request)
-        
-        return user.requests
+        return user.pending
+
+#get a list of all of user's received friend requests
+def get_received(username: str):
+    with Session(engine) as session:
+        user = session.get(User, username)
+        return user.received

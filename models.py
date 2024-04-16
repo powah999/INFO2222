@@ -31,15 +31,13 @@ class User(Base):
     password: Mapped[str] = mapped_column(String(60)) #hash (kdf) of password
     salt: Mapped[str] = mapped_column(String)
     public: Mapped[str] = mapped_column(String)
-    #attempts: Mapped[int] = mapped_column(INTEGER, default=0) #number of failed login attempts
 
     #status: Mapped[bool] = mapped_column(Boolean) #Online if True
 
     friends: Mapped[List["Friend"]] = relationship(back_populates="user") #list of friends
-    requests: Mapped[List["Request"]] = relationship(back_populates="user") #received friend requests
+    received: Mapped[List["Received"]] = relationship(back_populates="user") #received friend requests
+    pending: Mapped[List["Pending"]] = relationship(back_populates="user") #pending friend requests
 
-    #def __init__(self):
-        #self.attempts = 0
 
 # existing friends
 class Friend(Base):
@@ -51,21 +49,22 @@ class Friend(Base):
 
     user: Mapped["User"] = relationship(back_populates="friends")
 
-    def __str__(self):
-        return f'{self.username}'
+# received friend requests
+class Received(Base):
+    __tablename__ = "received"
 
-# friend requests
-class Request(Base):
-    __tablename__ = "request"
+    sender: Mapped[str] = mapped_column(String) #name of sender who sent request
+    receiver: Mapped[str] = mapped_column(ForeignKey("user.username"), primary_key=True) #name of user who received request
 
-    username: Mapped[str] = mapped_column(ForeignKey("user.username"))
-    #sent: Mapped[str] = mapped_column(String)
-    friend_username: Mapped[str] = mapped_column(String, primary_key=True) #name of friend who sent/received request
-    is_received: Mapped[bool] = mapped_column(Boolean) #if true: received, if false: sent/pending
+    user: Mapped["User"] = relationship(back_populates="received")
 
-    user: Mapped["User"] = relationship(back_populates="requests")
+#sent friend requests
+class Pending(Base):
+    __tablename__ = "pending"
+    sender: Mapped[str] = mapped_column(ForeignKey("user.username"), primary_key=True) #name of sender who sent request
+    receiver: Mapped[str] = mapped_column(String) #name of user who received request
 
-
+    user: Mapped["User"] = relationship(back_populates="pending")
 
 #every user and friend has a corresponding message history / room id
 #every room id has 2 users associated with it + their chat history

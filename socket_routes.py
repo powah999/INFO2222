@@ -122,35 +122,31 @@ def send_request(sender_name, receiver_name):
             return "This person is already your friend!"
     
     #check if friend request has already been sent
-    sender_requests = db.get_friend_requests(sender_name, False)
+    sender_requests = db.get_pending(sender_name)
     for pending in sender_requests:
-        if pending.friend_username == receiver_name:
+        if pending.receiver == receiver_name:
             return "You've already sent this person a request!"
     
-    #add to sender's pending requests
-    db.add_request(sender_name, receiver_name, False)
+    return db.make_request(sender=sender_name, receiver=receiver_name)
 
-    #add to receiver's sent requests
-    db.add_request(receiver_name, sender_name, True)
+    
 
 #accept friend request
 @socketio.on("accept")
 def accept(sender_name, receiver_name):
-    #remove sent and received requests from sender and receiver respectively
-    db.remove_request(sender_name, receiver_name)
-    db.remove_request(receiver_name, sender_name)
-
     #add to friend list in both users
     db.add_friend(sender_name, receiver_name)
-    db.add_friend(receiver_name, sender_name)
+
+    #remove sent and received requests from sender and receiver respectively
+    db.remove_request(sender_name, receiver_name)
 
     #create empty chat history
     room.create_history(sender_name, receiver_name)
+
+    #return db.get_friends(receiver_name)
 
 #decline friend request
 @socketio.on("decline")
 def decline(sender_name, receiver_name):
     db.remove_request(sender_name, receiver_name)
-    db.remove_request(receiver_name, sender_name)
 
-#remove pending request option?

@@ -55,7 +55,6 @@ def login_user():
     if attempts.is_blocked(username):
         return "Error: Your account has been blocked due to too many failed login attempts"
 
-    
     #password verification
     password = request.json.get("password").encode('utf-8')
     verify = bcrypt.kdf(password=password, salt=user.salt, desired_key_bytes=60, rounds=200)
@@ -67,7 +66,7 @@ def login_user():
         return "Error: Password does not match!"
     attempts.reset(username)
 
-    return url_for('home', username=request.json.get("username"), friends=request.json.get("friends"), received=db.get_friend_requests(username, True), pending=db.get_friend_requests(username, False))
+    return url_for('home', username=request.json.get("username"), friends=request.json.get("friends"), received=db.get_received(username), pending=db.get_pending(username))
 
 # handles a get request to the signup page
 @app.route("/signup")
@@ -97,7 +96,7 @@ def signup_user():
         db.insert_user(username, hash, salt, public)
         # public_keys.add_key(username, public)
         attempts.reset(username)
-        return url_for('home', username=username, friends=request.json.get("friends"), received=db.get_friend_requests(username, True), pending=db.get_friend_requests(username, False))
+        return url_for('home', username=username, friends=request.json.get("friends"), received=db.get_received(username), pending=db.get_pending(username))
     return "Error: User already exists!"
 
 # handler when a "404" error happens
@@ -113,7 +112,7 @@ def home():
 
     username=request.args.get("username")
 
-    return render_template("home.jinja", username=username, friends=request.args.get("friends"), received=db.get_friend_requests(username, True), pending=db.get_friend_requests(username, False))
+    return render_template("home.jinja", username=username, friends=request.args.get("friends"), received=db.get_received(username), pending=db.get_pending(username))
 
 if __name__ == '__main__':
     socketio.run(app, host="localhost", port=5000 ,debug=True, ssl_context=('localhost.crt', 'localhost.key'))

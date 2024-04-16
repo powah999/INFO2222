@@ -36,7 +36,7 @@ Sign up page, pretty much the same as login.
         else if (!/[a-z]/i.test(password)) {
             alert("Password requires at least one alphabetic character!");
         }
-        else if (/[^A-Za-z0-9]/.test(password)) {
+        else if (!/[^A-Za-z0-9]/.test(password)) {
             alert("Password requires at least one special character!");
         }
         else {
@@ -80,7 +80,7 @@ Sign up page, pretty much the same as login.
         let res = await axios.post(loginURL, {
             username: $("#username").val(),
             password: hash,
-            public: publicKey,
+            public: publicKey
         });
 
         if (!isValidURL(res.data)) {

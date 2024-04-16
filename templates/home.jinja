@@ -46,14 +46,14 @@
     <ul style="float: left">
         <h2>My friends:</h2>
         {% if friends %}
-        {% for friend in friends %}
-        <li style="display:inline-block">
-            <div class="received">
-                <span>{{ friend.username }}</span>
-                <button onclick="join_room( {{friend.username}} )">Chat</button>
-            </div>
-        </li>
-        {% endfor %}
+            {% for friend in friends %}
+            <li style="display:inline-block">
+                <div class="received">
+                    <span>{{ friend.username }}</span>
+                    <button onclick="join_room( {{ friend.username }} )">Chat</button>
+                </div>
+            </li>
+            {% endfor %}
         {% else %}
         <p> You have no friends :&#40;
         <p>
@@ -65,11 +65,11 @@
     <ul style="float: right">
         <h2>Pending friend requests:</h2>
         {% if pending %}
-        {% for request in pending %}
-        <li style="display:inline-block">
-            {{ request.friend_username }}
-        </li>
-        {% endfor %}
+            {% for request in pending %}
+            <li style="display:inline-block">
+                {{ request.receiver }}
+            </li>
+            {% endfor %}
         {% else %}
         <p> You have no pending requests!
         <p>
@@ -81,15 +81,15 @@
     <ul style="float: right">
         <h2>Received friend requests:</h2>
         {% if received %}
-        {% for request in received %}
-        <li style="display:inline-block">
-            <div class="received">
-                <span>{{ request.friend_username }}</span>
-                <button onclick="accept( {{ request.friend_username}} )">Accept</button>
-                <button onclick="decline( {{ request.friend_username}} )">Decline</button>
-            </div>
-        </li>
-        {% endfor %}
+            {% for request in received %}
+            <li style="display:inline-block">
+                <div class="received">
+                    <span>{{ request.sender }}</span>
+                    <button onclick="accept('{{request.sender}}')">Accept</button>
+                    <button onclick="decline('{{request.sender}}')">Decline</button>
+                </div>
+            </li>
+            {% endfor %}
         {% else %}
         <p> No one wants to be your friend :&#40;
         <p>
@@ -188,12 +188,20 @@
 
     })
 
-    function accept(friend_username) {
-        socket.emit("accept", username, friend_username);
+    function accept(sender_name) {
+        socket.emit("accept", sender_name, username, (res) => {
+            if (typeof res == "string") {
+                alert(res);
+                return;
+            }
+           // friends.push(res);
+        });
+
+
 
         //message history storage
         const history = [];
-        localStorage.setItem(friend_username, history);
+        localStorage.setItem(sender_name, history);
     }
 
     function decline(friend_username) {
@@ -237,7 +245,6 @@
             Cookies.set("room_id", room_id);
 
             // now we'll show the input box, so the user can input their message
-            // $("#chat_box").hide();
             $("#input_box").show();
 
         });
@@ -255,7 +262,18 @@
 
         // pass in the receiver of our message to the server
         // as well as the current user's username
-        socket.emit("send_request", username, new_friend);
+        socket.emit("send_request", username, new_friend, (res) => {
+            if (typeof res == "string") {
+                alert(res);
+                return;
+            }
+
+            //stop reloading to show new requests
+
+            //const url = new URL(window.location);
+            //url.searchParams.set('pending', 'res');
+            //window.history.pushState({}, '', url);
+        });
     }
 
 
@@ -265,7 +283,6 @@
         Cookies.remove("room_id");
         socket.emit("leave", username, friend, room_id);
         $("#input_box").hide();
-        // $("#chat_box").show();
     }
 
     // function to add a message to the message box
