@@ -37,13 +37,12 @@ def get_user(username: str):
 def add_friend(username, friend_username):
     with Session(engine) as session:
         user = session.get(User, username)
-        new = Friend(username=friend_username)
-        user.friends.append(new)
+        new_friend = Friend(username=friend_username)
+        user.friends.append(new_friend)
+        
         friend = session.get(User, friend_username)
-        new = Friend(username=username)
-        friend.friends.append(new)
-        session.merge(user)
-        session.merge(friend)
+        user_friend = Friend(username=username)
+        friend.friends.append(user_friend)
         session.commit()
 
 
@@ -51,15 +50,13 @@ def add_friend(username, friend_username):
 def make_request(sender_name, receiver_name):
     with Session(engine) as session:
         sender = session.get(User, sender_name)
-        new_pending = Pending(sender=sender_name, receiver=receiver_name)
+        new_pending = Pending(receiver=receiver_name)
         sender.pending.append(new_pending)
+        
         receiver = session.get(User, receiver_name)
-        new_received = Received(sender=sender_name, receiver=receiver_name)
+        new_received = Received(sender=sender_name)
         receiver.received.append(new_received)
-        session.merge(sender)
-        session.merge(receiver)
         session.commit()
-
 
 #remove friend request from user's requests list
 def remove_request(sender_name, receiver_name):
@@ -80,7 +77,6 @@ def remove_request(sender_name, receiver_name):
             if request.sender == sender_name:
                 to_remove = request
                 break
-        
         if to_remove != None:
             receiver.received.remove(to_remove)
             session.commit()

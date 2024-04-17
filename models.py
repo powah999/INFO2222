@@ -34,7 +34,7 @@ class User(Base):
 
     #status: Mapped[bool] = mapped_column(Boolean) #Online if True
 
-    friends: Mapped[List["Friend"]] = relationship(back_populates="user") #list of friends
+    friends: Mapped[List["User"]] = relationship(back_populates="user") #list of friends
     received: Mapped[List["Received"]] = relationship(back_populates="user") #received friend requests
     pending: Mapped[List["Pending"]] = relationship(back_populates="user") #pending friend requests
 
@@ -61,8 +61,8 @@ class Received(Base):
 #sent friend requests
 class Pending(Base):
     __tablename__ = "pending"
-    sender: Mapped[str] = mapped_column(ForeignKey("user.username"), primary_key=True) #name of sender who sent request
-    receiver: Mapped[str] = mapped_column(String) #name of user who received request
+    sender: Mapped[str] = mapped_column(ForeignKey("user.username")) #name of sender who sent request
+    receiver: Mapped[str] = mapped_column(String, primary_key=True) #name of user who received request
 
     user: Mapped["User"] = relationship(back_populates="pending")
 
