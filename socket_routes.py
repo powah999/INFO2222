@@ -129,7 +129,7 @@ def send_request(sender_name, receiver_name):
         if pending.receiver == receiver_name:
             return "You've already sent this person a request!"
     
-    return db.make_request(sender=sender_name, receiver=receiver_name)
+    db.make_request(sender=sender_name, receiver=receiver_name)
 
     
 

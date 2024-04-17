@@ -48,15 +48,18 @@ def add_friend(username, friend_username):
 
 
 #add friend request to user's requests list
-def make_request(sender, receiver):
+def make_request(sender_name, receiver_name):
     with Session(engine) as session:
-        new_pending = Pending(sender=sender, receiver=receiver)
-        new_received = Received(sender=sender, receiver=receiver)
-        session.add(new_pending)
-        session.add(new_received)
+        sender = session.get(User, sender_name)
+        new_pending = Pending(sender=sender_name, receiver=receiver_name)
+        sender.pending.append(new_pending)
+        receiver = session.get(User, receiver_name)
+        new_received = Received(sender=sender_name, receiver=receiver_name)
+        receiver.received.append(new_received)
+        session.merge(sender)
+        session.merge(receiver)
         session.commit()
 
-        return new_pending
 
 #remove friend request from user's requests list
 def remove_request(sender_name, receiver_name):
