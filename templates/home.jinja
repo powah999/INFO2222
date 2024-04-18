@@ -43,15 +43,15 @@
 
 <!-- Display friends list upon successful login-->
 <div style="border-bottom: 1px solid black;">
-    <ul style="float: left">
+    <ul id="friend_list" style="float: left">
         <h2>My friends:</h2>
         {% if friends %}
             {% for friend in friends %}
             <li style="display:inline-block">
                 <div class="received">
                     <span>{{ friend.username }}</span>
-                    <button onclick="join_room( {{ friend.username }} )">Chat</button>
-                </div>
+                    <button onclick="join_room( '{{ friend.username }}' )">Chat</button>
+                </div> 
             </li>
             {% endfor %}
         {% else %}
@@ -62,7 +62,7 @@
 </div>
 
 <div>
-    <ul style="float: right">
+    <ul id="pending_requests" style="float: right">
         <h2>Pending friend requests:</h2>
         {% if pending %}
             {% for request in pending %}
@@ -78,7 +78,7 @@
 </div>
 
 <div>
-    <ul style="float: right">
+    <ul id="received_requests" style="float: right">
         <h2>Received friend requests:</h2>
         {% if received %}
             {% for request in received %}
@@ -102,6 +102,7 @@
 <main>
     <!-- The messages are displayed here -->
     <section id="message_box"></section>
+    
 
     <!-- These part ideally should be a form element, 
     but I wrote this code a year ago and I don't want to break anything...-->
@@ -195,10 +196,13 @@
                 alert(res);
                 return;
             }
-           // friends.push(res);
+           // friends.push(res); ??
+           
         });
 
-
+        //add new friend to friend list on screen
+        let friend_list = $("#friend_list").val();
+        add_list_item(sender_name, friend_list);
 
         //message history storage
         const history = [];
@@ -207,6 +211,10 @@
 
     function decline(friend_username) {
         socket.emit("decline", username, friend_username);
+        
+        //remove friend name from received requests list
+        let received_requests = $("#received_requests").val();
+        received_requests.removeChild(friend_username);
     }
 
     // we'll send the message to the server by emitting a "send" event
@@ -253,7 +261,7 @@
 
         //show message history upon successful join
         const history = localStorage.getItem(friend_username);
-        history.forEach(show_history)
+        history.forEach(show_history);
     }
 
     // emit a send_request event to the server to make a new friend request
@@ -269,11 +277,19 @@
                 alert(res);
                 return;
             }
-
             //append new_friend to pending requests
+            let pending_requests = $("#pending_requests").val();
+            add_list_item(new_friend, pending_requests);
         });
     }
 
+    function add_list_item(item, list) {
+        //create list item
+        var list_item = document.createElement("li");
+        list_item.innerText = item;
+        
+        list.appendChild(list_item);
+    }
 
     // function when the user clicks on "Leave Room"
     // emits a "leave" event, telling the server that we want to leave the room
