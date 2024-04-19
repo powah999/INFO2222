@@ -10,85 +10,99 @@ Prisma docs also looks so much better in comparison
 or use SQLite, if you're not into fancy ORMs (but be mindful of Injection attacks :) )
 '''
 
-from sqlalchemy import String, ForeignKey, INTEGER, Boolean, Column
+from sqlalchemy import String, ForeignKey, Integer, Boolean, Column, MetaData, Table, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from typing import Dict, List
+
 
 # data models
 class Base(DeclarativeBase):
     pass
 
 # model to store user information
-class User(Base): 
+class User(Base):
     __tablename__ = "user"
     
-    # looks complicated but basically means
-    # I want a username column of type string,
-    # and I want this column to be my primary key
-    # then accessing john.username -> will give me some data of type string
-    # in other words we've mapped the username Python object property to an SQL column of type String 
-    username: Mapped[str] = mapped_column(String, primary_key=True)
-    password: Mapped[str] = mapped_column(String(60)) #hash (kdf) of password
-    salt: Mapped[str] = mapped_column(String)
-    #public: Mapped[str] = mapped_column(String)
+    id = Column(Integer, primary_key=True)
+    username = Column(String, unique=True)
+    password = Column(String)
+    salt = Column(String)
 
-    #status: Mapped[bool] = mapped_column(Boolean) #Online if True
+    friends = relationship('Friend', secondary='link')
 
-    friends: Mapped[List["Friend"]] = relationship(back_populates="user") #list of friends
-    received: Mapped[List["Received"]] = relationship(back_populates="user") #received friend requests
-    pending: Mapped[List["Pending"]] = relationship(back_populates="user") #pending friend requests
+    def __repr__(self):
+        return f"(Username: {self.username}, Password: {self.password}, Salt: {self.salt})"     
+
 
 
 # existing friends
 class Friend(Base):
     __tablename__ = "friend"
 
-    username: Mapped[str] = mapped_column(String, primary_key=True)
-    #status: Mapped[bool] = mapped_column(Boolean)
-    user_username: Mapped[str] = mapped_column(ForeignKey("user.username"))
+    id = Column(Integer, primary_key=True)
+    username = Column(String,unique=True)
+    
+    friend_of = relationship(User, secondary='link')
 
-    user: Mapped["User"] = relationship(back_populates="friends")
+    def __repr__(self):
+        return f"{self.username}"
+    
 
-# received friend requests
-class Received(Base):
-    __tablename__ = "received"
+class Link(Base):
+    __tablename__ = 'link'
 
-    sender: Mapped[str] = mapped_column(String) #name of sender who sent request
-    receiver: Mapped[str] = mapped_column(ForeignKey("user.username"), primary_key=True) #name of user who received request
+    user_id = Column(Integer, ForeignKey('user.id'), primary_key=True)
+    friend_id = Column(Integer, ForeignKey('friend.id'), primary_key=True)
+    
+class Request(Base):
+    __tablename__ = "request"
 
-    user: Mapped["User"] = relationship(back_populates="received")
+    id = Column(Integer, primary_key=True)
+    sender = Column(String)
+    receiver = Column(String)
 
-#sent friend requests
-class Pending(Base):
-    __tablename__ = "pending"
-    sender: Mapped[str] = mapped_column(ForeignKey("user.username"), primary_key=True) #name of sender who sent request
-    receiver: Mapped[str] = mapped_column(String) #name of user who received request
+    __table_args__ = (
+        UniqueConstraint('sender', 'receiver', name='_sender_receiver_uc'),
+    )
 
-    user: Mapped["User"] = relationship(back_populates="pending")
-
-#every user and friend has a corresponding message history / room id
-#every room id has 2 users associated with it + their chat history
-#when 2 users first start chatting, chat history is empty. Append/log every message to chat history as they are sent
-#when user clicks chat button next to friend name, join room checks if online to allow them to send messages, else just view chat history
-
-
-
-
-"""
-class Request():
+# stateful counter used to generate the room id
+class Counter():
     def __init__(self):
-        self.received: Dict[str, list] = {}
-        self.sent: Dict[str, list] = {}
+        self.counter = 0
     
-    def send_request(self, user: str, receiver: str):
-        self.sent[user].append(receiver)
-        self.received[receiver].append(user)
+    def get(self):
+        self.counter += 1
+        return self.counter
+
+# Room class, used to keep track of which username is in which room
+class Room():
+    def __init__(self):
+        self.counter = Counter()
+        # dictionary that maps the username to the room id
+        # for example self.dict["John"] -> gives you the room id of 
+        # the room where John is in
+        self.dict: Dict[str, int] = {}
+
+    def create_room(self, sender: str, receiver: str) -> int:
+        room_id = self.counter.get()
+        self.dict[sender] = room_id
+        self.dict[receiver] = room_id
+        return room_id
     
-    def accept_request(self, user: str, receiver: str):
+    def join_room(self,  sender: str, room_id: int) -> int:
+        self.dict[sender] = room_id
 
-    def decline_request(self, user: str, receiver: str):
-"""
+    def leave_room(self, user):
+        if user not in self.dict.keys():
+            return
+        del self.dict[user]
 
+    # gets the room id from a user
+    def get_room_id(self, user: str):
+        if user not in self.dict.keys():
+            return None
+        return self.dict[user]
+    
 #number of failed login attempts for a user
 class Attempts():
     def __init__(self):
@@ -118,21 +132,9 @@ class Attempts():
             return False
         return (self.dict[user] > 3)
     
-
-# stateful counter used to generate the room id
-class Counter():
-    def __init__(self):
-        self.counter = 0
-    
-    def get(self):
-        self.counter += 1
-        return self.counter
-
 #dictionary to store public keys for all users
 class Public():
     def __init__(self):
-        #key = string
-        #value = public key
         self.keys: Dict[str, str] = {}
 
     def add_key(self, username, key):
@@ -143,6 +145,54 @@ class Public():
             return
         
         return self.keys[username]
+    
+
+
+
+# class Pending(Base):
+#     __tablename__ = "pending"
+
+#     id = Column(Integer, primary_key=True)
+#     sender: Mapped[str] = mapped_column(ForeignKey("user.username"), primary_key=True)
+#     receiver: Mapped[str] = mapped_column(String)
+
+#     user: Mapped["User"] = relationship(back_populates="pending")
+
+# #every user and friend has a corresponding message history / room id
+# #every room id has 2 users associated with it + their chat history
+# #when 2 users first start chatting, chat history is empty. Append/log every message to chat history as they are sent
+# #when user clicks chat button next to friend name, join room checks if online to allow them to send messages, else just view chat history
+
+
+
+
+# """
+# class Request():
+#     def __init__(self):
+#         self.received: Dict[str, list] = {}
+#         self.sent: Dict[str, list] = {}
+    
+#     def send_request(self, user: str, receiver: str):
+#         self.sent[user].append(receiver)
+#         self.received[receiver].append(user)
+    
+#     def accept_request(self, user: str, receiver: str):
+
+#     def decline_request(self, user: str, receiver: str):
+# """
+
+    
+
+# # stateful counter used to generate the room id
+# class Counter():
+#     def __init__(self):
+#         self.counter = 0
+    
+#     def get(self):
+#         self.counter += 1
+#         return self.counter
+
+
   
 
 # Room class, used to keep track of which username is in which room

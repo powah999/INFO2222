@@ -47,41 +47,49 @@
 
         // axios post is a fancy way of posting a request to the server,
         // we pass in the username and password here
-        let res = await axios.post(loginURL, {
+        let res1 = await axios.post(loginURL, {
             username: $("#username").val(),
-            password: hash
+            password: hash,
+            requestType: 'password'
         });
 
+        if (res1.data != 'pass') {
+            alert(res1.data)
+            return;
+        }
+
+        //salt
+        var salt = CryptoJS.lib.WordArray.random(128 / 8);
+
+        //PBKDF2 key object
+        var derivedKey = CryptoJS.PBKDF2(password, salt, {
+            keySize: 256 / 32,
+            iterations: 1000
+        });
+
+        //PBKDF2 key string format
+        var stringKey = derivedKey.toString(CryptoJS.enc.Base64);
+
+        var privateKey = cryptico.generateRSAKey(stringKey, 2048);
+        var publicKey = cryptico.publicKeyString(privateKey);
+
+        let res2 = await axios.post(loginURL, {
+            username: $("#username").val(),
+            password: hash,
+            public: publicKey,
+            requestType: 'key'
+
+        });
+
+        console.log("Public key: ", publicKey);
+
         // if the server sends in an error message, alert() the error message
-        if (!isValidURL(res.data)) {
-            alert(res.data);
+        if (!isValidURL(res2.data)) {
+            alert(res2.data);
             return;
         }
 
-
-        //Edward's addition: this block of code checks if the private key and pbkdf2 key is present in localstorage
-        // If key not exist, you cant log in
-        if (typeof (Storage) !== "undefined") {
-            let deriv = localStorage.getItem("derived");
-            let priv = localStorage.getItem("private");
-
-            if (deriv && priv) {
-                console.log("Key exists in localStorage");
-
-            } else {
-                console.log("Key doesn't exist in localStorage.");
-                return;
-            }
-        } else {
-
-            console.log("Sorry, your browser does not support localStorage.");
-            return;
-        }
-
-        // redirects to the URL (ie. res.data),
-        // we use _self here since we all hate that moment
-        // when the browser opens a new tab
-        window.open(res.data, "_self")
+        window.open(res2.data, "_self")
     }
 </script>
 {% endblock %}

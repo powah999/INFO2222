@@ -50,12 +50,24 @@ Sign up page, pretty much the same as login.
 
         var password = $("#password").val();
 
-        if (!isValidPwd(password)) {
-            return;
-        }
+        //if (!isValidPwd(password)) {
+        //    return;
+        //}
 
         //password hash
         var hash = CryptoJS.SHA3(password, { outputLength: 256 }).toString(CryptoJS.enc.Hex);
+
+        let loginURL = "{{ url_for('signup_user') }}";
+
+        let res1 = await axios.post(loginURL, {
+            username: $("#username").val(),
+            requestType: 'password'
+        });
+
+        if (res1.data != 'pass') {
+            alert(res1.data);
+            return;
+        }
 
         //salt
         var salt = CryptoJS.lib.WordArray.random(128 / 8);
@@ -72,19 +84,14 @@ Sign up page, pretty much the same as login.
         var privateKey = cryptico.generateRSAKey(stringKey, 2048);
         var publicKey = cryptico.publicKeyString(privateKey);
 
-        console.log("Derived Key:", stringKey);
-        console.log("public key: ", publicKey)
-
-        let loginURL = "{{ url_for('signup_user') }}";
-
-        let res = await axios.post(loginURL, {
+        let res2 = await axios.post(loginURL, {
             username: $("#username").val(),
             password: hash,
-            public: publicKey
+            requestType: 'key'
         });
 
-        if (!isValidURL(res.data)) {
-            alert(res.data);
+        if (!isValidURL(res2.data)) {
+            alert(res2.data);
             return;
         }
 
@@ -92,9 +99,7 @@ Sign up page, pretty much the same as login.
         localStorage.setItem("derived", derivedKey);
         localStorage.setItem("private", privateKey);
 
-
-
-        window.open(res.data, "_self")
+        window.open(res2.data, "_self")
     }
 </script>
 {% endblock %}

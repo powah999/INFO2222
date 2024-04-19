@@ -45,15 +45,15 @@
 <div style="border-bottom: 1px solid black;">
     <ul style="float: left">
         <h2>My friends:</h2>
-        {% if friends %}
-            {% for friend in friends %}
-            <li style="display:inline-block">
-                <div class="received">
-                    <span>{{ friend.username }}</span>
-                    <button onclick="join_room( {{ friend.username }} )">Chat</button>
-                </div>
-            </li>
-            {% endfor %}
+        {% if friends != [] and friends is not none and friends != -1 %}
+        {% for friend in friends %}
+        <li style="display:inline-block">
+            <div class="received">
+                <span>{{ friend.username }}</span>
+                <button onclick="join_room( {{ friend.username }} )">Chat</button>
+            </div>
+        </li>
+        {% endfor %}
         {% else %}
         <p> You have no friends :&#40;
         <p>
@@ -64,12 +64,12 @@
 <div>
     <ul style="float: right">
         <h2>Pending friend requests:</h2>
-        {% if pending %}
-            {% for request in pending %}
-            <li style="display:inline-block">
-                {{ request.receiver }}
-            </li>
-            {% endfor %}
+        {% if pending != [] and pending is not none and pending != -1 %}
+        {% for request in pending %}
+        <li style="display:inline-block">
+            {{ request.receiver }}
+        </li>
+        {% endfor %}
         {% else %}
         <p> You have no pending requests!
         <p>
@@ -80,16 +80,16 @@
 <div>
     <ul style="float: right">
         <h2>Received friend requests:</h2>
-        {% if received %}
-            {% for request in received %}
-            <li style="display:inline-block">
-                <div class="received">
-                    <span>{{ request.sender }}</span>
-                    <button onclick="accept('{{request.sender}}')">Accept</button>
-                    <button onclick="decline('{{request.sender}}')">Decline</button>
-                </div>
-            </li>
-            {% endfor %}
+        {% if received != [] and received is not none and received != -1 %}
+        {% for request in received %}
+        <li style="display:inline-block">
+            <div class="received">
+                <span>{{ request.sender }}</span>
+                <button onclick="accept('{{ request.sender }}')">Accept</button>
+                <button onclick="decline('{{ request.sender }}')">Decline</button>
+            </div>
+        </li>
+        {% endfor %}
         {% else %}
         <p> No one wants to be your friend :&#40;
         <p>
@@ -189,24 +189,58 @@
 
     })
 
+    function send_friend_request() {
+        console.log("test?")
+
+        let new_friend = $("#new_friend").val();
+
+        // pass in the receiver of our message to the server
+        // as well as the current user's username
+        socket.emit("send_request", username, new_friend, (res) => {
+            if (typeof res == "string") {
+                alert(res);
+                return;
+            }
+
+            //append new_friend to pending requests
+        });
+    }
+
     function accept(sender_name) {
+        console.log("testing")
+        console.log(sender_name)
+        console.log(username)
+
+
         socket.emit("accept", sender_name, username, (res) => {
             if (typeof res == "string") {
                 alert(res);
                 return;
             }
-           // friends.push(res);
         });
+
+        //socket.emit("accept", sender_name, username, (res) => {
+        //    if (typeof res == "string") {
+        //        alert(res);
+        //        return;
+        //    }
+        //    // friends.push(res);
+        //});
 
 
 
         //message history storage
-        const history = [];
-        localStorage.setItem(sender_name, history);
+        //const history = [];
+        //localStorage.setItem(sender_name, history);
     }
 
-    function decline(friend_username) {
-        socket.emit("decline", username, friend_username);
+    function decline(sender_name) {
+        socket.emit("decline", sender_name, username, (res) => {
+            if (typeof res == "string") {
+                alert(res);
+                return;
+            }
+        });
     }
 
     // we'll send the message to the server by emitting a "send" event
