@@ -181,90 +181,85 @@ class Public():
 #     def decline_request(self, user: str, receiver: str):
 # """
 
-    
-
-# # stateful counter used to generate the room id
-# class Counter():
-#     def __init__(self):
-#         self.counter = 0
-    
-#     def get(self):
-#         self.counter += 1
-#         return self.counter
-
-
   
-
 # Room class, used to keep track of which username is in which room
-class Room():
-    def __init__(self):
-        self.counter = Counter()
-        # dictionary that maps an online user to a room_id to join a room 
-        #key = user name
-        #value room_id
-        self.dict: Dict[str, int] = {}
-        # dictionary that maps the 2 users/friends to the room id
-        # for example self.dict[{"John", "Bob"}] -> gives you the room id of 
-        # the room where John/Bob will chat
-        self.room_id: Dict[set, int] = {}
+# class Room():
+#     def __init__(self):
+#         self.counter = Counter()
+#         # dictionary that maps an online user to a room_id to join a room 
+#         #key = user name
+#         #value room_id
+#         self.dict: Dict[str, int] = {}
+#         # dictionary that maps the 2 users/friends to the room id
+#         # for example self.dict[{"John", "Bob"}] -> gives you the room id of 
+#         # the room where John/Bob will chat
+#         self.room_id: Dict[set, int] = {}
         
-        #every chat session (room id) between 2 users has a chat history
-        self.history: Dict[set, list] = {} #key = 2 users #value = message history
+#         #every chat session (room id) between 2 users has a chat history
+#         self.history: Dict[set, list] = {} #key = 2 users #value = message history
 
-    #create room id when friend is not online
-    def create_room(self, sender: str, receiver: str) -> int:
-        room_id = self.counter.get()
-        self.dict[sender] = room_id
-        self.room_id[{sender, receiver}] = room_id
-        return room_id
+#     #create room id when friend is not online
+#     def create_room(self, sender: str, receiver: str) -> int:
+#         a = frozenset({sender, receiver})
+#         room_id = self.counter.get()
+#         self.dict[sender] = room_id
+#         self.room_id[a] = room_id
+#         return room_id
     
-    def join_room(self,  user: str, room_id: int) -> int:
-        self.dict[user] = room_id
+#     def join_room(self,  user: str, room_id: int) -> int:
+#         self.dict[user] = room_id
 
-    def leave_room(self, user):
-        if user not in self.dict.keys():
-            return
+#     def leave_room(self, user):
+#         if user not in self.dict.keys():
+#             return
         
-        room_id = self.dict[user]
-        del self.dict[user]
+#         room_id = self.dict[user]
+#         del self.dict[user]
 
-        if room_id not in self.dict.values():
-            #both users left room, remove session id
-            for pair, id in self.room_id.items():
-                if id == room_id:
-                    del self.room_id[pair]
-                    break
+#         if room_id not in self.dict.values():
+#             #both users left room, remove session id
+#             for pair, id in self.room_id.items():
+#                 if id == room_id:
+#                     del self.room_id[pair]
+#                     break
 
-    # gets the room id from 2 users/friends
-    def get_room_id(self, sender: str, receiver: str):
-        if {sender, receiver} not in self.room_id.keys():
-            return None
-        return self.room_id[{sender, receiver}]
+#     # gets the room id from 2 users/friends
+#     def get_room_id(self, sender: str, receiver: str):
+#         a = frozenset({sender, receiver})
+#         if a not in self.room_id.keys():
+#             print("BRUH")
+#             return None
+#         print("YaY")
+#         return self.room_id[a]
     
-    def get_receiver(self, username, room_id):
-         for pair, id in self.room_id.items():
-                if id == room_id:
-                    for user in pair:
-                        if username != user:
-                            return user
+#     def get_receiver(self, username, room_id):
+#          for pair, id in self.room_id.items():
+#                 if id == room_id:
+#                     for user in pair:
+#                         if username != user:
+#                             return user
 
-    # get message history between 2 users
-    def get_history(self, sender: str, receiver: str):
-        if {sender, receiver} not in self.history.keys():
-            return None
-        return self.history[{sender, receiver}]
+#     # get message history between 2 users
+#     def get_history(self, sender: str, receiver: str):
+#         a = frozenset({sender, receiver})
+#         if a not in self.history.keys():
+#             return None
+#         return self.history[a]
     
-    # add new message to history
-    def add_message(self, message: str, sender: str, receiver: str):
-        if {sender, receiver} not in self.history.keys():
-            return None
-        self.history[{sender, receiver}].append(message)
+#     # add new message to history
+#     def add_message(self, message: str, sender: str, receiver: str):
+#         a = frozenset({sender, receiver})
+#         if a not in self.history.keys():
+#             return None
+#         self.history[a].append(message)
 
-    # delete history between 2 users
-    def del_history(self, sender: str, receiver: str): 
-        if {sender, receiver} not in self.history.keys():
-            return None
-        del self.history[{sender, receiver}]
+#     # delete history between 2 users
+#     def del_history(self, sender: str, receiver: str):
+#         a = frozenset({sender, receiver}) 
+#         if a not in self.history.keys():
+#             return None
+#         del self.history[a]
 
-    def create_history(self, sender: str, receiver: str):
-        self.dict[{sender, receiver}] = [] #make room_id first element?
+#     def create_history(self, sender: str, receiver: str):
+#         a = frozenset({sender, receiver})
+#         self.dict[a] = [] #make room_id first element?

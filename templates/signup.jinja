@@ -84,9 +84,13 @@ Sign up page, pretty much the same as login.
         var privateKey = cryptico.generateRSAKey(stringKey, 2048);
         var publicKey = cryptico.publicKeyString(privateKey);
 
+
+
+
         let res2 = await axios.post(loginURL, {
             username: $("#username").val(),
             password: hash,
+            public: publicKey,
             requestType: 'key'
         });
 
@@ -96,8 +100,9 @@ Sign up page, pretty much the same as login.
         }
 
         //store derived and private key in local storage?
-        localStorage.setItem("derived", derivedKey);
+        localStorage.setItem("derived", stringKey);
         localStorage.setItem("private", privateKey);
+        localStorage.setItem("public", publicKey);
 
         window.open(res2.data, "_self")
     }

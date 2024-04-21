@@ -13,7 +13,7 @@ from pathlib import Path
 Path("database") \
     .mkdir(exist_ok=True)
 
-engine = create_engine("sqlite:///database/main.db", echo=True)
+engine = create_engine("sqlite:///database/main.db", echo=False)
 Base.metadata.create_all(engine)
 
 # inserts a user to the database

@@ -4,12 +4,14 @@ this is where you'll find all of the get/post request handlers
 the socket event handlers are inside of socket_routes.py
 '''
 
-from flask import Flask, render_template, request, abort, url_for
+from flask import Flask, render_template, request, abort, url_for, session, redirect, jsonify
 from flask_socketio import SocketIO
 import db
 import secrets
 from string import ascii_letters, digits, punctuation
 import bcrypt
+import datetime
+import bleach
 
 # import logging
 
@@ -19,15 +21,23 @@ import bcrypt
 
 app = Flask(__name__)
 
+app.config.update(
+    SESSION_COOKIE_SECURE=True, #limits cookies to HTTPS traffic only
+    SESSION_COOKIE_HTTPONLY=True, #prevents contents of cookies from being read with JavaScript
+    SESSION_COOKIE_SAMESITE='Lax', #prevents CSRF (unless web browser contains external link/GET request)
+    SESSION_PERMANENT_LIFETIME=datetime.timedelta(hours=1), #session token expiry time
+    )
+
 # secret key used to sign the session cookie
 app.config['SECRET_KEY'] = secrets.token_hex()
 socketio = SocketIO(app)
 
 # don't remove this!!
 import socket_routes
+from socket_routes import public_keys, session_ids
 
 attempts = db.Attempts()
-public_keys = db.Public()
+
 
 # index page
 @app.route("/")
@@ -48,16 +58,23 @@ def login_user():
 
     data = request.json
 
-    username = data.get('username')
-
-    if public_keys.get_key(username):
-        return 'Already logged in!'
-
+    username = bleach.clean(data.get('username'))
+    
     if attempts.is_blocked(username):
         return "Error: Your account has been blocked due to too many failed login attempts"
+    
+
+
+    val = session_ids.get(username)
+    if val != None:
+        if session.get('id'):
+            if session.get('id') != val:
+                return "The username's session id is different from yours"
+        else:
+            return "The username already has a session id, while you dont even have one"
+
 
     if data.get('requestType') == 'password':
-        username = data.get('username')
         user = db.get_user(username)
         if user == -1:
             attempts.set_failed(username)
@@ -81,14 +98,21 @@ def login_user():
             
         
     elif data.get('requestType') == 'key':
-            username = data.get("username")
-            password = data.get("password")
-            public = data.get("public")
-            print(public)
+            public = bleach.clean(data.get("public"))
+
+            print('__________________')
+            print(f"\n\nUSER {username}'s public key:\n\n {public}\n\n")
+            print('__________________')
 
             public_keys.add_key(username, public)
 
-            return url_for('home', username=username, friends=db.get_friends(username), received=db.get_received(username), pending=db.get_sent(username))
+            if val == None:
+                session['id'] = secrets.token_hex(120) #120 bytes -> 240 hexadecimal characters -> 10^145 permutations
+                session_ids[username] = session.get('id')
+
+                print(f"\n\nLOGINNN SESSION ID {session.get('id')}\n\n")
+
+            return url_for('home', username=username, friends=db.get_friends(username), received=db.get_received(username), pending=db.get_sent(username), session_id=session.get('id'))
     
     else:
         return 'requestType aint valid bruh'
@@ -106,19 +130,21 @@ def signup_user():
         abort(404)
 
     data = request.json
+    username = bleach.clean(data.get('username'))
 
     if data.get('requestType') == 'password':
-        username = data.get('username')
         if db.get_user(username) == -1:        
             return 'pass'
         else:
             return 'Error: User already exists!'
         
     elif data.get('requestType') == 'key':
-            username = data.get("username")
             password = data.get("password").encode('ascii')
-            public = data.get("public")
-            print(public)
+            public = bleach.clean(data.get("public"))
+
+            print('__________________')
+            print(f"\n\nUSER {username}'s public key:\n\n {public}\n\n")
+            print('__________________')
 
             salt = bcrypt.gensalt()
             hash = bcrypt.kdf(password=password, salt=salt, desired_key_bytes=60, rounds=200)
@@ -126,7 +152,11 @@ def signup_user():
             db.insert_user(username, hash, salt)
             public_keys.add_key(username, public)
             attempts.reset(username)
-            return url_for('home', username=username, friends=db.get_friends(username), received=db.get_received(username), pending=db.get_sent(username))
+
+            session['id'] = secrets.token_hex(120) #120 bytes -> 240 hexadecimal characters -> 10^145 permutations
+            session_ids[username] = session.get('id')
+
+            return url_for('home', username=username, friends=db.get_friends(username), received=db.get_received(username), pending=db.get_sent(username), session_id=session.get('id'))
     else:
         return 'requestType aint valid bruh'
 
@@ -139,15 +169,41 @@ def page_not_found(_):
 # home page, where the messaging app is
 @app.route("/home")
 def home():
+    username = request.args.get("username")
+    session_id = request.args.get("session_id")
+
     if request.args.get("username") is None:
         abort(404)
+    if request.args.get("session_id") is None:
+        return 'NO SESSION ID'
+
+
+    #a = request.cookies.get("username")
+    #if a != request.args.get("username") or a == None:
 
 
     username=request.args.get("username")
+    print('\n\n')
+    print(session_ids)
+    print('\n \n')
+
+    if session.get('id') == None:
+        return 'YOU DONT EVEN HAVE A SESSION ID'
+
+    val = session_ids.get(username)
+
+    if val != None:
+        if session.get('id') != val:
+            return 'SID stored in server NOT EQUAL to your SESSION SID'
+        elif val != session_id:
+            return 'SID stored in server NOT EQUAL to your URL SID'
+        # elif val != request.cookies.get('room_id'):
+        #     return 'HUH'
+    else:
+        return 'relogin'
 
 
-    return render_template("home.jinja", username=username, friends=db.get_friends(username), received=db.get_received(username), pending=db.get_sent(username))
+    return render_template("home.jinja", username=username, friends=db.get_friends(username), received=db.get_received(username), pending=db.get_sent(username), session_id=session.get('id'))
 
 if __name__ == '__main__':
     socketio.run(app, host="localhost", port=5000 ,debug=True, ssl_context=('localhost.crt', 'localhost.key'))
-

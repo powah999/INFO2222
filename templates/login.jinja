@@ -69,9 +69,9 @@
 
         //PBKDF2 key string format
         var stringKey = derivedKey.toString(CryptoJS.enc.Base64);
-
         var privateKey = cryptico.generateRSAKey(stringKey, 2048);
         var publicKey = cryptico.publicKeyString(privateKey);
+
 
         let res2 = await axios.post(loginURL, {
             username: $("#username").val(),
@@ -81,13 +81,18 @@
 
         });
 
-        console.log("Public key: ", publicKey);
+        //console.log("Public key: ", publicKey);
 
         // if the server sends in an error message, alert() the error message
         if (!isValidURL(res2.data)) {
             alert(res2.data);
             return;
         }
+
+        //store derived and private key in local storage?
+        localStorage.setItem("derived", stringKey);
+        localStorage.setItem("private", privateKey);
+        localStorage.setItem("public", publicKey);
 
         window.open(res2.data, "_self")
     }

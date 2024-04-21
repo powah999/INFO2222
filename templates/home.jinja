@@ -50,7 +50,7 @@
         <li style="display:inline-block">
             <div class="received">
                 <span>{{ friend.username }}</span>
-                <button onclick="join_room( {{ friend.username }} )">Chat</button>
+                <button onclick="join_room( '{{ friend.username }}' )">Chat</button>
             </div>
         </li>
         {% endfor %}
@@ -132,8 +132,11 @@
 </main>
 
 <script src="/static/js/libs/socket.io.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cryptico/0.0.1343522940/cryptico.min.js"></script>
 <script>
     let room_id = 0;
+
 
     // when the user presses the "Enter" key inside of the "message box", 
     // the message is sent to the server
@@ -171,49 +174,54 @@
         room_id = parseInt(Cookies.get("room_id"));
     })
 
+
     // Here's the Socket IO part of the code
     // things get a bit complicated here so brace yourselves :P
     let username = "{{ username }}";
+    let session_id = "{{ session_id }}"
+    let publicKey = null;
 
     Cookies.set('username', username);
+    Cookies.set('session_id', session_id)
 
     // initializes the socket
     const socket = io();
 
-    // an incoming message arrives, we'll add the message to the message box
-    socket.on("incoming", (msg, color = "black", room_id) => {
-
-        let priv = localStorage.getItem("private");
-        let plain_text = cryptico.decrypt(msg, priv);
-
-        add_message(plain_text, color);
-
-    })
-
-    function send_friend_request() {
-        console.log("test?")
-
-        let new_friend = $("#new_friend").val();
-
-        // pass in the receiver of our message to the server
-        // as well as the current user's username
-        socket.emit("send_request", username, new_friend, (res) => {
+    socket.on("pubkey_first", (data) => {
+        localStorage.setItem(data.guy, data.pubkey);
+        let pubkey = localStorage.getItem('public');
+        socket.emit("exchange", username, data.guy, pubkey, session_id, (res) => {
             if (typeof res == "string") {
                 alert(res);
                 return;
             }
-
-            //append new_friend to pending requests
         });
-    }
+    })
+
+    socket.on("pubkey_second", (data) => {
+        localStorage.setItem(data.guy, data.pubkey);
+    })
+
+    // an incoming message arrives, we'll add the message to the message box
+    socket.on("incoming", (username, msg, color = "black", msgtype) => {
+        if (msgtype == 'msg') {
+            try {
+                let priv = localStorage.getItem("private");
+                msg = cryptico.decrypt(msg.cipher, priv);
+            } catch (error) {
+                console.error("Error:", error.message);
+            }
+
+        }
+
+        add_message(msg, color);
+
+    })
+
 
     function accept(sender_name) {
-        console.log("testing")
-        console.log(sender_name)
-        console.log(username)
 
-
-        socket.emit("accept", sender_name, username, (res) => {
+        socket.emit("accept", sender_name, username, session_id, (res) => {
             if (typeof res == "string") {
                 alert(res);
                 return;
@@ -225,13 +233,26 @@
         let friend_list = $("#friend_list").val();
         add_list_item(sender_name, friend_list);
 
-        //message history storage
-        //const history = [];
-        //localStorage.setItem(sender_name, history);
     }
 
-    function decline(sender_name) {
-        socket.emit("decline", sender_name, username, (res) => {
+
+
+    // we'll send the message to the server by emitting a "send" event
+    function send() {
+        let message = $("#message").val();
+        $("#message").val("");
+
+        add_message(message, "black");
+
+
+        //encrypt message with receiver's public key (encrypt_key)
+        let friendname = Cookies.get('friendname');
+        let encrypt_key = localStorage.getItem(friendname);
+        let cipher_text = cryptico.encrypt(message, encrypt_key);
+
+        console.log(`Encrypted text: ${cipher_text}`);
+
+        socket.emit("send", username, cipher_text, room_id, session_id, (res) => {
             if (typeof res == "string") {
                 alert(res);
                 return;
@@ -239,26 +260,14 @@
         });
     }
 
-    // we'll send the message to the server by emitting a "send" event
-    function send() {
-        let message = $("#message").val();
-        $("#message").val("");
-
-        add_message(message, "black")
-
-        //encrypt message with receiver's public key (encrypt_key)
-        let priv = localStorage.getItem("private")
-        let cipher_text = cryptico.encrypt(message, encrypt_key, priv)
-
-        socket.emit("send", username, message, room_id);
-    }
-
     // we emit a join room event to the server to join a room
     function join_room(receiver) {
 
         // pass in the receiver of our message to the server
         // as well as the current user's username
-        socket.emit("join", username, receiver, (res) => {
+        Cookies.set('friendname', receiver);
+        let publickey = localStorage.getItem('public');
+        socket.emit("join", username, receiver, publickey, session_id, (res) => {
             // res is a string with the error message if the error occurs
             // this is a pretty bad way of doing error handling, but watevs
             if (typeof res != "number") {
@@ -266,35 +275,84 @@
                 return;
             }
 
-            //public key to encrypt messages with
-            socket.on("receiver key", (key) => {
-                encrypt_key = key;
-            });
-            friend_username = receiver;
-
             // set the room id variable to the room id returned by the server
             room_id = res;
             Cookies.set("room_id", room_id);
 
+
             // now we'll show the input box, so the user can input their message
+            $("#chat_box").hide();
             $("#input_box").show();
+
+            receiver += '_history';
+
+            if (!localStorage.getItem(receiver)) {
+                const history = [];
+                localStorage.setItem(receiver, JSON.stringify(history));
+            }
+
+
+            add_message()
 
         });
 
-        //show message history upon successful join
-        const history = localStorage.getItem(friend_username);
-        history.forEach(show_history);
+
     }
+    // function when the user clicks on "Leave Room"
+    // emits a "leave" event, telling the server that we want to leave the room
+    function leave() {
+        add_message(`${username} has left the room`, 'red');
+        socket.emit("leave", username, room_id, session_id, (res) => {
+            if (typeof res == "string") {
+                alert(res);
+                return;
+            } else {
+
+            }
+        });
+        Cookies.remove("room_id");
+        Cookies.remove("friendname");
+        $("#input_box").hide();
+    }
+
+    function decline(sender_name) {
+        socket.emit("decline", sender_name, username, session_id, (res) => {
+            if (typeof res == "string") {
+                alert(res);
+                return;
+            }
+        });
+    }
+
+    // function to add a message to the message box
+    // called when an incoming message has reached a client
+    function add_message(message, color, flag = false) {
+        let box = $("#message_box");
+        let child = $(`<p style="color:${color}; margin: 0px;"></p>`).text(message);
+        box.append(child);
+
+
+
+        if (flag == true) {
+            let friend_username = Cookies.get('friendname');
+            friend_username += '_history';
+
+            let history = JSON.parse(localStorage.getItem(friend_username)) || [];
+            history.push([message, color]);
+            localStorage.setItem(friend_username, JSON.stringify(history));
+        }
+
+    }
+
 
     // emit a send_request event to the server to make a new friend request
     function send_friend_request() {
-        console.log("test?")
 
         let new_friend = $("#new_friend").val();
 
         // pass in the receiver of our message to the server
         // as well as the current user's username
-        socket.emit("send_request", username, new_friend, (res) => {
+        socket.emit("send_request", username, new_friend, session_id, (res) => {
             if (typeof res == "string") {
                 alert(res);
                 return;
@@ -313,30 +371,6 @@
         list.appendChild(list_item);
     }
 
-    // function when the user clicks on "Leave Room"
-    // emits a "leave" event, telling the server that we want to leave the room
-    function leave() {
-        Cookies.remove("room_id");
-        socket.emit("leave", username, friend, room_id);
-        $("#input_box").hide();
-    }
 
-    // function to add a message to the message box
-    // called when an incoming message has reached a client
-    function add_message(message, color) {
-        let box = $("#message_box");
-        let child = $(`<p style="color:${color}; margin: 0px;"></p>`).text(message);
-        box.append(child);
-
-        //add message to message history
-        const history = localStorage.getItem(friend_username);
-        history.push(child);
-    }
-
-    //display plain text message history when a user joins a room 
-    function show_history(message) {
-        let box = $("#message_box");
-        box.append(message);
-    }
 </script>
 {% endblock %}
