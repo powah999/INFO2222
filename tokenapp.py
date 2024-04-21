@@ -23,9 +23,13 @@ import datetime
 
 app = Flask(__name__)
 
-#session token expiry time
-app.config["SESSION_PERMANENT_LIFETIME"] = datetime.timedelta(hours=2)
-#app.config["SESSION_TYPE"] = "filesystem" --> idk if we need this??
+app.config.update(
+    SESSION_COOKIE_SECURE=True, #limits cookies to HTTPS traffic only
+    SESSION_COOKIE_HTTPONLY=True, #prevents contents of cookies from being read with JavaScript
+    SESSION_COOKIE_SAMESITE='Lax', #prevents CSRF (unless web browser contains external link/GET request)
+    SESSION_PERMANENT_LIFETIME=datetime.timedelta(hours=1), #session token expiry time
+    )
+
 Session(app)
 
 # secret key used to sign the session cookie
@@ -42,9 +46,9 @@ public_keys = Public()
 @app.route("/")
 def index():
     #check if user exists in the session already/ i.e. is already logged in
-    if not session.get("username"):
+    if "username" in session:
         #if they are, then redirect to login page
-	    return redirect("/login")
+	    return redirect(url_for("home"))
     return render_template("index.jinja")
 
 # login page
@@ -130,6 +134,10 @@ def page_not_found(_):
 def home():
     if request.args.get("username") is None:
         abort(404)
+    
+    if "username" in session:
+        username = session["username"]
+        return render_template("home.jinja", username=username, friends=db.get_friends(username), received=db.get_received(username), pending=db.get_pending(username))
 
     username=request.args.get("username")
 
