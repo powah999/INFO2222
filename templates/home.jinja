@@ -68,7 +68,7 @@
         {% if pending %}
         {% for request in pending %}
         <li style="display:inline-block">
-            {{ request.receiver }}
+            htmlEncode('{{ request.sender }}')
         </li>
         {% endfor %}
         {% else %}
@@ -85,7 +85,7 @@
         {% for request in received %}
         <li style="display:inline-block">
             <div class="received">
-                <span>{{ request.sender }}</span>
+                <span>htmlEncode('{{ request.sender }}')</span>
                 <button onclick="accept(htmlEncode('{{ request.sender }}'))">Accept</button>
                 <button onclick="decline(htmlEncode('{{ request.sender }}'))">Decline</button>
             </div>
