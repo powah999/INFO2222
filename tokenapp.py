@@ -45,10 +45,6 @@ public_keys = Public()
 # index page
 @app.route("/")
 def index():
-    #check if user exists in the session already/ i.e. is already logged in
-    if "username" in session:
-        #if they are, then redirect to login page
-	    return redirect(url_for("home"))
     return render_template("index.jinja")
 
 # login page
@@ -71,6 +67,12 @@ def login_user():
 
     if attempts.is_blocked(username):
         return "Error: Your account has been blocked due to too many failed login attempts"
+   
+    #check if user exists in the session already/ i.e. is already logged in
+    if session["username"] == username:
+        #if they are, then direct to home page
+        username = session["username"]
+	    return url_for("home", username=username, friends=db.get_friends(username), received=db.get_received(username), pending=db.get_pending(username)))
 
     #password verification
     password = request.json.get("password").encode('utf-8')
@@ -83,12 +85,17 @@ def login_user():
         return "Error: Password does not match!"
     attempts.reset(username)
 
-    #log username when users login successfully to create session token
-    session["username"] = username
-    #set expiry date for session token
-    session.permanent = True
+    #check if user exists in the session already/ i.e. is already logged in
+    if session["username"] == username:
+        #if they are, then direct to home page
+        username = session["username"]
+    else:
+        #log username when users login successfully to create session token
+        session["username"] = username
+        #set expiry date for session token
+        session.permanent = True
     
-    return url_for('home', username=request.json.get("username"), friends=request.json.get("friends"), received=db.get_received(username), pending=db.get_pending(username))
+    return url_for('home', username=username, friends=request.json.get("friends"), received=db.get_received(username), pending=db.get_pending(username))
 
 # handles a get request to the signup page
 @app.route("/signup")
@@ -107,7 +114,7 @@ def signup_user():
     print(username)
     print(password)
     print(public)
-
+    
     #hash received password
     password = password.encode('ascii')
 
@@ -135,13 +142,11 @@ def home():
     if request.args.get("username") is None:
         abort(404)
     
-    if "username" in session:
+    if session["username"] == request.args.get("username"):
         username = session["username"]
-        return render_template("home.jinja", username=username, friends=db.get_friends(username), received=db.get_received(username), pending=db.get_pending(username))
-
-    username=request.args.get("username")
-
-    return render_template("home.jinja", username=username, friends=request.args.get("friends"), received=db.get_received(username), pending=db.get_pending(username))
+        return render_template("home.jinja", username=username, friends=request.args.get("friends"), received=db.get_received(username), pending=db.get_pending(username))
+    #redirect unauthenticated user not in session back to main page
+    return redirect(url_for("/"))
 
 if __name__ == '__main__':
     socketio.run(app, host="localhost", port=5000 ,debug=True, ssl_context=('localhost.crt', 'localhost.key'))

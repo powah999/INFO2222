@@ -55,56 +55,55 @@ Sign up page, pretty much the same as login.
         //}
 
         //password hash
-        var hash = CryptoJS.SHA3(password, { outputLength: 256 }).toString(CryptoJS.enc.Hex);
+        //var hash = CryptoJS.SHA3(password, { outputLength: 256 }).toString(CryptoJS.enc.Hex);
 
         let loginURL = "{{ url_for('signup_user') }}";
 
-        let res1 = await axios.post(loginURL, {
-            username: $("#username").val(),
-            requestType: 'password'
-        });
+       // let res1 = await axios.post(loginURL, {
+       //     username: $("#username").val(),
+       //     requestType: 'password'
+       // });
 
-        if (res1.data != 'pass') {
-            alert(res1.data);
-            return;
-        }
+      //  if (res1.data != 'pass') {
+       //     alert(res1.data);
+       //     return;
+       // }
 
         //salt
         var salt = CryptoJS.lib.WordArray.random(128 / 8);
 
         //PBKDF2 key object
-        var derivedKey = CryptoJS.PBKDF2(password, salt, {
+        var hash = CryptoJS.PBKDF2(password, salt, {
             keySize: 256 / 32,
             iterations: 1000
         });
 
         //PBKDF2 key string format
-        var stringKey = derivedKey.toString(CryptoJS.enc.Base64);
+        var stringHash = derivedKey.toString(CryptoJS.enc.Base64);
 
-        var privateKey = cryptico.generateRSAKey(stringKey, 2048);
+        var privateKey = cryptico.generateRSAKey(password, 2048);
         var publicKey = cryptico.publicKeyString(privateKey);
 
 
 
 
-        let res2 = await axios.post(loginURL, {
+        let res = await axios.post(loginURL, {
             username: $("#username").val(),
-            password: hash,
+            password: stringHash,
             public: publicKey,
-            requestType: 'key'
         });
 
-        if (!isValidURL(res2.data)) {
-            alert(res2.data);
+        if (!isValidURL(res.data)) {
+            alert(res.data);
             return;
         }
 
         //store derived and private key in local storage?
-        localStorage.setItem("derived", stringKey);
+       // localStorage.setItem("derived", stringKey);
         localStorage.setItem("private", privateKey);
-        localStorage.setItem("public", publicKey);
+       // localStorage.setItem("public", publicKey);
 
-        window.open(res2.data, "_self")
+        window.open(res.data, "_self")
     }
 </script>
 {% endblock %}

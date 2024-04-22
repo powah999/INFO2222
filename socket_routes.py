@@ -136,6 +136,9 @@ def disconnect():
         return
 
     emit("incoming", (username, f"{username} has disconnected", "red", "announcement"), to=int(room_id))
+    
+    #remove session cookie when user closes window
+    session["username"] = None
 
 # send message event handler --> send to everyone but sender
 @socketio.on("send")

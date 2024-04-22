@@ -42,59 +42,39 @@
         var password = $("#password").val();
         let loginURL = "{{ url_for('login_user') }}";
 
-
-        var hash = CryptoJS.SHA3(password, { outputLength: 256 }).toString(CryptoJS.enc.Hex);
-
-        // axios post is a fancy way of posting a request to the server,
-        // we pass in the username and password here
-        let res1 = await axios.post(loginURL, {
-            username: $("#username").val(),
-            password: hash,
-            requestType: 'password'
-        });
-
-        if (res1.data != 'pass') {
-            alert(res1.data)
-            return;
-        }
-
-        //salt
+         //salt
         var salt = CryptoJS.lib.WordArray.random(128 / 8);
 
         //PBKDF2 key object
-        var derivedKey = CryptoJS.PBKDF2(password, salt, {
+        var hash = CryptoJS.PBKDF2(password, salt, {
             keySize: 256 / 32,
             iterations: 1000
         });
 
         //PBKDF2 key string format
-        var stringKey = derivedKey.toString(CryptoJS.enc.Base64);
-        var privateKey = cryptico.generateRSAKey(stringKey, 2048);
-        var publicKey = cryptico.publicKeyString(privateKey);
+        var stringHash = derivedKey.toString(CryptoJS.enc.Base64);
 
+        var privateKey = cryptico.generateRSAKey(password, 2048);
+      
 
-        let res2 = await axios.post(loginURL, {
+        // axios post is a fancy way of posting a request to the server,
+        // we pass in the username and password here
+        let res = await axios.post(loginURL, {
             username: $("#username").val(),
-            password: hash,
-            public: publicKey,
-            requestType: 'key'
-
+            password: stringHash,
         });
 
-        //console.log("Public key: ", publicKey);
-
         // if the server sends in an error message, alert() the error message
-        if (!isValidURL(res2.data)) {
-            alert(res2.data);
+        if (!isValidURL(res.data)) {
+            alert(res.data);
             return;
-        }
+        }        
 
         //store derived and private key in local storage?
-        localStorage.setItem("derived", stringKey);
         localStorage.setItem("private", privateKey);
-        localStorage.setItem("public", publicKey);
+      
 
-        window.open(res2.data, "_self")
+        window.open(res.data, "_self")
     }
 </script>
 {% endblock %}
