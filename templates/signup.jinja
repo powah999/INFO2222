@@ -25,6 +25,7 @@ Sign up page, pretty much the same as login.
         return false;
     }
 
+
     //password requirements
     function isValidPwd(password) {
         if (password.length < 12) {
@@ -45,10 +46,16 @@ Sign up page, pretty much the same as login.
         return false;
     }
 
+    function htmlEncode(str){
+        return String(str).replace(/[^\w. ]/gi, function(c){
+            return '&#'+c.charCodeAt(0)+';';
+            });
+        }
+
     // this function is identical to login(), see login.jinja
     async function signup() {
 
-        var password = $("#password").val();
+        var password = htmlEncode($("#password").val());
 
         //if (!isValidPwd(password)) {
         //    return;
@@ -88,7 +95,7 @@ Sign up page, pretty much the same as login.
 
 
         let res = await axios.post(loginURL, {
-            username: $("#username").val(),
+            username: htmlEncode($("#username").val()),
             password: stringHash,
             public: publicKey,
         });

@@ -37,7 +37,8 @@
 <!--Navbar, you'll see the username here-->
 <nav style="border-bottom: 1px solid black;">
     <ol style="float: right">
-        <li style="display:inline-block">Username: {{ username }} </li>
+        
+        <li style="display:inline-block">Username: {{ htmlEncode(username) }} </li>
     </ol>
 </nav>
 
@@ -50,7 +51,7 @@
         <li style="display:inline-block">
             <div class="received">
                 <span>{{ friend.username }}</span>
-                <button onclick="join_room( '{{ friend.username }}' )">Chat</button>
+                <button onclick="join_room(htmlEncode('{{ friend.username }}'))">Chat</button>
             </div>
         </li>
         {% endfor %}
@@ -64,7 +65,7 @@
 <div>
     <ul id="pending_requests" style="float: right">
         <h2>Pending friend requests:</h2>
-        {% if pending != [] and pending is not none and pending != -1 %}
+        {% if pending %}
         {% for request in pending %}
         <li style="display:inline-block">
             {{ request.receiver }}
@@ -80,13 +81,13 @@
 <div>
     <ul id="received_requests" style="float: right">
         <h2>Received friend requests:</h2>
-        {% if received != [] and received is not none and received != -1 %}
+        {% if received %}
         {% for request in received %}
         <li style="display:inline-block">
             <div class="received">
                 <span>{{ request.sender }}</span>
-                <button onclick="accept('{{ request.sender }}')">Accept</button>
-                <button onclick="decline('{{ request.sender }}')">Decline</button>
+                <button onclick="accept(htmlEncode('{{ request.sender }}'))">Accept</button>
+                <button onclick="decline(htmlEncode('{{ request.sender }}'))">Decline</button>
             </div>
         </li>
         {% endfor %}
@@ -177,8 +178,8 @@
 
     // Here's the Socket IO part of the code
     // things get a bit complicated here so brace yourselves :P
-    let username = "{{ username }}";
-    let session_id = "{{ session_id }}"
+    let username = htmlEncode("{{ username }}");
+    let session_id = htmlEncode("{{ session_id }}");
     let publicKey = null;
 
     Cookies.set('username', username);
@@ -218,8 +219,11 @@
 
     })
 
+    
+
 
     function accept(sender_name) {
+        let sender_name = htmlEncode(sender_name);
 
         socket.emit("accept", sender_name, username, session_id, (res) => {
             if (typeof res == "string") {
@@ -230,7 +234,7 @@
         });
 
         //add new friend to friend list on screen
-        let friend_list = $("#friend_list").val();
+        let friend_list = htmlEncode($("#friend_list").val());
         add_list_item(sender_name, friend_list);
 
     }
@@ -239,8 +243,8 @@
 
     // we'll send the message to the server by emitting a "send" event
     function send() {
-        let message = $("#message").val();
-        $("#message").val("");
+        let message = htmlEncode($("#message").val());
+        htmlEncode($("#message").val(""));
 
         add_message(message, "black");
 
@@ -261,8 +265,8 @@
     }
 
     // we emit a join room event to the server to join a room
-    function join_room(receiver) {
-
+    function join_room() {
+        
         // pass in the receiver of our message to the server
         // as well as the current user's username
         Cookies.set('friendname', receiver);
@@ -327,11 +331,11 @@
     // function to add a message to the message box
     // called when an incoming message has reached a client
     function add_message(message, color, flag = false) {
+        let message = htmlEncode(message);
+        let color = htmlEncode(color);
         let box = $("#message_box");
         let child = $(`<p style="color:${color}; margin: 0px;"></p>`).text(message);
         box.append(child);
-
-
 
         if (flag == true) {
             let friend_username = Cookies.get('friendname');
@@ -348,7 +352,7 @@
     // emit a send_request event to the server to make a new friend request
     function send_friend_request() {
 
-        let new_friend = $("#new_friend").val();
+        let new_friend = htmlEncode($("#new_friend").val());
 
         // pass in the receiver of our message to the server
         // as well as the current user's username
@@ -358,15 +362,16 @@
                 return;
             }
             //append new_friend to pending requests
-            let pending_requests = $("#pending_requests").val();
+            let pending_requests = htmlEncode($("#pending_requests").val());
             add_list_item(new_friend, pending_requests);
         });
     }
 
     function add_list_item(item, list) {
         //create list item
+
         var list_item = document.createElement("li");
-        list_item.innerText = item;
+        list_item.innerText = htmlEncode(item);
 
         list.appendChild(list_item);
     }

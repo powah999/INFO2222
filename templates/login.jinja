@@ -29,6 +29,12 @@
         return false;
     }
 
+    function htmlEncode(str){
+        return String(str).replace(/[^\w. ]/gi, function(c){
+            return '&#'+c.charCodeAt(0)+';';
+            });
+        }
+
     // login function to well login...
     async function login() {
         // this fancy syntax is part of the Jinja syntax
@@ -39,7 +45,7 @@
         // so... "{{ url_for('login_user')}}" 
         // gives us -> "http://blabla/login/user"
 
-        var password = $("#password").val();
+        var password = htmlEncode($("#password").val());
         let loginURL = "{{ url_for('login_user') }}";
 
          //salt
@@ -60,7 +66,7 @@
         // axios post is a fancy way of posting a request to the server,
         // we pass in the username and password here
         let res = await axios.post(loginURL, {
-            username: $("#username").val(),
+            username: htmlEncode($("#username").val()),
             password: stringHash,
         });
 
