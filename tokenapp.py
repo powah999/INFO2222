@@ -26,7 +26,7 @@ app = Flask(__name__)
 app.config.update(
     SESSION_COOKIE_SECURE=True, #limits cookies to HTTPS traffic only
     SESSION_COOKIE_HTTPONLY=True, #prevents contents of cookies from being read with JavaScript
-    SESSION_COOKIE_SAMESITE='Lax', #prevents CSRF (unless web browser contains external link/GET request)
+    SESSION_COOKIE_SAMESITE='Strict', #prevents CSRF (unless web browser contains external link/GET request)
     SESSION_PERMANENT_LIFETIME=datetime.timedelta(hours=1), #session token expiry time
     )
 
