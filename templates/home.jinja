@@ -63,7 +63,7 @@
 <div>
     <ul id="pending_requests" style="float: right">
         <h2>Pending friend requests:</h2>
-        {% if pending != [] and pending is not none and pending != -1 %}
+        {% if pending %}
         {% for request in pending %}
         <li style="display:inline-block">
             <div class="{{ request.receiver | escape }}">
@@ -80,7 +80,7 @@
 <div>
     <ul id="received_requests" style="float: right">
         <h2>Received friend requests:</h2>
-        {% if received != [] and received is not none and received != -1 %}
+        {% if received %}
         {% for request in received %}
         <li style="display:inline-block">
             <div class="{{ request.sender | escape }}">
