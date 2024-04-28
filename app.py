@@ -12,6 +12,7 @@ from string import ascii_letters, digits, punctuation
 import bcrypt
 import datetime
 import bleach
+from flask_session import Session
 
 # import logging
 
@@ -30,14 +31,28 @@ app.config.update(
 
 # secret key used to sign the session cookie
 app.config['SECRET_KEY'] = secrets.token_hex()
+app.config['SESSION_TYPE'] = 'filesystem'
 socketio = SocketIO(app)
+
+
+server_session = Session(app)
 
 # don't remove this!!
 import socket_routes
-from socket_routes import public_keys, session_ids
+from socket_routes import public_keys, session_ids, session_tokens
 
 attempts = db.Attempts()
 
+def comparestrings(string_a, string_b):
+    li = []
+    string_a = set(string_a)
+
+    for char in string_a:
+        if char not in string_b:
+            li.append(char)
+    if len(li) > 0:
+        return f'Your username should only contain alphanumeric ("a" or "1"), underscore ("_"), period ("."), and space " " characters! '
+    return True
 
 # index page
 @app.route("/")
@@ -53,28 +68,35 @@ def login():
 @app.route("/login/user", methods=["POST"])
 def login_user():
 
+
     if not request.is_json:
         abort(404)
 
     data = request.json
 
-    username = bleach.clean(data.get('username'))
+
+    #input validation against xss
+    username = data.get('username')
+    string_b = bleach.clean(data.get('username'))
+    check = comparestrings(username, string_b)
+    if check != True:
+        return check
+    
+    if data.get('requestType') == 'salt':
+        user = db.get_user(username)
+        if type(user) == int:
+            return 'User does not exist'
+        return user.salt2
+
     
     if attempts.is_blocked(username):
         return "Error: Your account has been blocked due to too many failed login attempts"
     
+    if username in session_ids.keys() and session_ids.get(username) != None:
+        return 'Username already has a session'
 
-
-    val = session_ids.get(username)
-    if val != None:
-        if session.get('id'):
-            if session.get('id') != val:
-                return "The username's session id is different from yours"
-        else:
-            return "The username already has a session id, while you dont even have one"
-
-
-    if data.get('requestType') == 'password':
+    if data.get('requestType') == 'password' or data.get('requestType') == 'key':
+        #user verification
         user = db.get_user(username)
         if user == -1:
             attempts.set_failed(username)
@@ -85,6 +107,7 @@ def login_user():
             
         #password verification
         password = data.get("password").encode('utf-8')
+        print(f'password = {password}')
         verify = bcrypt.kdf(password=password, salt=user.salt, desired_key_bytes=60, rounds=200)
         if verify != user.password:
             attempts.set_failed(username)
@@ -94,25 +117,32 @@ def login_user():
         
         attempts.reset(username)
 
-        return 'pass'
-            
-        
-    elif data.get('requestType') == 'key':
-            public = bleach.clean(data.get("public"))
+        print("\n\nHHHHHHHHHHHHHHHHHHHHHHHHH\n\n")
 
-            print('__________________')
-            print(f"\n\nUSER {username}'s public key:\n\n {public}\n\n")
-            print('__________________')
+        #if request is 'password',only verifies user and password
+        #if request 'key', server gets public key and sets a session
+        if data.get('requestType') == 'key':
+                public = data.get('public')
+                public_b = bleach.clean(data.get("public"))
+                check = comparestrings(public, public_b)
+                if check != True:
+                    return check
+                
 
-            public_keys.add_key(username, public)
+                print('__________________')
+                print(f"\n\nUSER {username}'s public key:\n\n {public}\n\n")
+                print('__________________')
 
-            if val == None:
-                session['id'] = secrets.token_hex(120) #120 bytes -> 240 hexadecimal characters -> 10^145 permutations
-                session_ids[username] = session.get('id')
+                public_keys.add_key(username, public)
 
-                print(f"\n\nLOGINNN SESSION ID {session.get('id')}\n\n")
+                session['username'] = username
+                session['token'] = secrets.token_hex(60)
+                session_tokens[username] = session.get('token')
+                session_ids[username] = None
 
-            return url_for('home', username=username, friends=db.get_friends(username), received=db.get_received(username), pending=db.get_sent(username), session_id=session.get('id'))
+                return url_for('home', username=username, friends=db.get_friends(username), received=db.get_received(username), pending=db.get_sent(username))
+        else:
+            return "pass"
     
     else:
         return 'requestType aint valid bruh'
@@ -130,33 +160,57 @@ def signup_user():
         abort(404)
 
     data = request.json
-    username = bleach.clean(data.get('username'))
+    #input validation against xss
+    username = data.get('username')
+    string_b = bleach.clean(data.get('username'))
 
-    if data.get('requestType') == 'password':
-        if db.get_user(username) == -1:        
-            return 'pass'
+    print(f"username: {username}")
+    print(f'string_b: {string_b}')
+    check = comparestrings(username, string_b)
+    if check != True:
+        return check
+
+    if data.get('requestType') == 'password' or data.get('requestType') == 'key':
+        if db.get_user(username) == -1:
+            if data.get('requestType') == 'key':
+                password = data.get("password").encode('ascii')
+                print(f'password  SIGNUP= {password}')
+                salt2 = data.get("salt")
+                print(f'\nsalt: {salt2}\n')
+                public = data.get('public')
+                print(f"public: {public}")
+
+                public_b = bleach.clean(data.get("public"))
+                print(f'string_b: {string_b}')
+                check = comparestrings(public, public_b)
+                if check != True:
+                    return check
+                
+                print('__________________')
+                print(f"\n\nUSER {username}'s public key:\n\n {public}\n\n")
+                print('__________________')
+
+                salt = bcrypt.gensalt()
+                hash = bcrypt.kdf(password=password, salt=salt, desired_key_bytes=60, rounds=200)
+
+                db.insert_user(username, hash, salt, salt2)
+                public_keys.add_key(username, public)
+
+                attempts.reset(username)
+
+
+                session['token'] = secrets.token_hex(60)
+                session_tokens[username] = session.get('token')
+
+
+                session['username'] = username
+                session_ids[username] = None
+
+                return url_for('home', username=username, friends=db.get_friends(username), received=db.get_received(username), pending=db.get_sent(username))
+            else:
+                return 'pass'
         else:
             return 'Error: User already exists!'
-        
-    elif data.get('requestType') == 'key':
-            password = data.get("password").encode('ascii')
-            public = bleach.clean(data.get("public"))
-
-            print('__________________')
-            print(f"\n\nUSER {username}'s public key:\n\n {public}\n\n")
-            print('__________________')
-
-            salt = bcrypt.gensalt()
-            hash = bcrypt.kdf(password=password, salt=salt, desired_key_bytes=60, rounds=200)
-
-            db.insert_user(username, hash, salt)
-            public_keys.add_key(username, public)
-            attempts.reset(username)
-
-            session['id'] = secrets.token_hex(120) #120 bytes -> 240 hexadecimal characters -> 10^145 permutations
-            session_ids[username] = session.get('id')
-
-            return url_for('home', username=username, friends=db.get_friends(username), received=db.get_received(username), pending=db.get_sent(username), session_id=session.get('id'))
     else:
         return 'requestType aint valid bruh'
 
@@ -170,40 +224,22 @@ def page_not_found(_):
 @app.route("/home")
 def home():
     username = request.args.get("username")
-    session_id = request.args.get("session_id")
 
     if request.args.get("username") is None:
         abort(404)
-    if request.args.get("session_id") is None:
-        return 'NO SESSION ID'
+    
+    if 'username' not in session or ('token' not in session):
+        print('\nusername or token not in session\n')
+        return redirect(url_for('login'))
 
+    if session.get('username') != username:
+        print('\n your session is not equal to the users actual session\n')
+        return redirect(url_for('login'))    
+        
+    if session.get('username') not in session_tokens.keys() or (session.get('token') != session_tokens.get(session.get('username'))):
+        return redirect(url_for('login'))     
 
-    #a = request.cookies.get("username")
-    #if a != request.args.get("username") or a == None:
-
-
-    username=request.args.get("username")
-    print('\n\n')
-    print(session_ids)
-    print('\n \n')
-
-    if session.get('id') == None:
-        return 'YOU DONT EVEN HAVE A SESSION ID'
-
-    val = session_ids.get(username)
-
-    if val != None:
-        if session.get('id') != val:
-            return 'SID stored in server NOT EQUAL to your SESSION SID'
-        elif val != session_id:
-            return 'SID stored in server NOT EQUAL to your URL SID'
-        # elif val != request.cookies.get('room_id'):
-        #     return 'HUH'
-    else:
-        return 'relogin'
-
-
-    return render_template("home.jinja", username=username, friends=db.get_friends(username), received=db.get_received(username), pending=db.get_sent(username), session_id=session.get('id'))
+    return render_template("home.jinja", username=username, friends=db.get_friends(username), received=db.get_received(username), pending=db.get_sent(username))
 
 if __name__ == '__main__':
     socketio.run(app, host="localhost", port=5000 ,debug=True, ssl_context=('localhost.crt', 'localhost.key'))

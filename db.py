@@ -3,9 +3,10 @@ db
 database file, containing all the logic to interface with the sql database
 '''
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, or_, and_
 from sqlalchemy.orm import Session
 from models import *
+import json
 
 from pathlib import Path
 
@@ -17,12 +18,68 @@ engine = create_engine("sqlite:///database/main.db", echo=False)
 Base.metadata.create_all(engine)
 
 # inserts a user to the database
-def insert_user(username: str, hashed_password: str, salt: str):
+def insert_user(username: str, hashed_password: str, salt: str, salt2: str):
     with Session(engine) as session:
-        user = User(username=username, password=hashed_password, salt=salt)
+        user = User(username=username, password=hashed_password, salt=salt, salt2=salt2)
         session.add(user)
         session.commit()
         return 0
+    
+def create_history(sender: str, receiver:str, listh: list[list[str]]):
+    with Session(engine) as session:
+        history = session.query(listh).filter(
+            or_(
+                and_(History.sender == sender, History.receiver == receiver),
+                and_(History.sender == receiver, History.receiver == sender)
+            )
+        ).first()
+
+        if history:
+            return 'history already created'
+        else:
+            history = History(sender=sender, receiver=receiver)
+            return 0 
+
+
+def insert_history(sender: str, receiver:str, history_list: list[list[str]]):
+    with Session(engine) as session:
+        history_entry = History(sender=sender, receiver=receiver, history=json.dumps(history_list))
+        session.add(history_entry)
+        session.commit()
+        return 0
+    
+def get_history(sender: str, receiver:str):
+    with Session(engine) as session:
+        history_entry = session.query(History).filter_by(sender=sender, receiver=receiver).first()
+        if history_entry is not None:
+            return json.loads(history_entry.history)
+        
+        return -1
+
+def append_history(sender:str, receiver:str, history_list: list[list[str]]):
+    with Session(engine) as session:
+        print(f'sender: {sender}')
+        print(f'receiver: {receiver}')
+        print(history_list)
+
+        history_entry = session.query(History).filter_by(sender=sender, receiver=receiver).first()
+        if history_entry is not None:
+            old_history = json.loads(history_entry.history)
+            if type(history_list) != list:
+                return -1
+            if old_history == None:
+                old_history = []
+            print('pass?')
+            for message in history_list:
+                old_history.append(message)
+            history_entry.history = json.dumps(old_history)
+            session.commit()
+            return 0
+        
+        return -1
+
+        
+        
 
 #add friends to user's friendlist
 def add_friend(name_a: str, name_b: str):
@@ -178,7 +235,7 @@ def get_friends(username):
     
 
         
-# Gets a user's username from the database
+# Gets a user from the database
 def get_user(username: str):
     with Session(engine) as session:
 
@@ -186,5 +243,5 @@ def get_user(username: str):
         if not user:
             print("\n User does not exist \n")
             return -1
-
+        
         return user

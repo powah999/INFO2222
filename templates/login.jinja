@@ -29,6 +29,28 @@
         return false;
     }
 
+
+
+    //input sanitization against xss
+    function htmlEncode(str) {
+        return String(str).replace(/[^\w. ]/gi, function (c) {
+            return '&#' + c.charCodeAt(0) + ';';
+        });
+    }
+
+    (function (c) {
+        var parametersBigint = ["n", "d", "p", "q", "dmp1", "dmq1", "coeff"];
+
+        c.privateKeyString = function (rsakey) {
+            var keyObj = {};
+            parametersBigint.forEach(function (parameter) {
+                keyObj[parameter] = c.b16to64(rsakey[parameter].toString(16));
+            });
+            // e is 3 implicitly
+            return JSON.stringify(keyObj);
+        }
+    })(cryptico)
+
     // login function to well login...
     async function login() {
         // this fancy syntax is part of the Jinja syntax
@@ -40,15 +62,30 @@
         // gives us -> "http://blabla/login/user"
 
         var password = $("#password").val();
+        var username = htmlEncode($("#username").val())
         let loginURL = "{{ url_for('login_user') }}";
 
 
-        var hash = CryptoJS.SHA3(password, { outputLength: 256 }).toString(CryptoJS.enc.Hex);
+
+
+        let res = await axios.post(loginURL, {
+            username: username,
+            requestType: 'salt'
+        });
+
+        if (res.data == 'User does not exist') {
+            alert(res.data)
+            return;
+        }
+
+        salt2 = res.data
+
+        var hash = CryptoJS.SHA3((password + salt2), { outputLength: 256 }).toString(CryptoJS.enc.Hex);
 
         // axios post is a fancy way of posting a request to the server,
         // we pass in the username and password here
         let res1 = await axios.post(loginURL, {
-            username: $("#username").val(),
+            username: username,
             password: hash,
             requestType: 'password'
         });
@@ -58,30 +95,29 @@
             return;
         }
 
-        //salt
-        var salt = CryptoJS.lib.WordArray.random(128 / 8);
+        var saltObj = CryptoJS.enc.Hex.parse(salt2);
 
         //PBKDF2 key object
-        var derivedKey = CryptoJS.PBKDF2(password, salt, {
+        var derivedKey = CryptoJS.PBKDF2(password, saltObj, {
             keySize: 256 / 32,
             iterations: 1000
         });
 
         //PBKDF2 key string format
-        var stringKey = derivedKey.toString(CryptoJS.enc.Base64);
-        var privateKey = cryptico.generateRSAKey(stringKey, 2048);
+        var stringDerived = derivedKey.toString(CryptoJS.enc.Base64);
+        var privateKey = cryptico.generateRSAKey(stringDerived, 2048);
         var publicKey = cryptico.publicKeyString(privateKey);
 
 
         let res2 = await axios.post(loginURL, {
-            username: $("#username").val(),
+            username: username,
             password: hash,
             public: publicKey,
             requestType: 'key'
 
         });
 
-        //console.log("Public key: ", publicKey);
+        console.log("Public key: ", publicKey);
 
         // if the server sends in an error message, alert() the error message
         if (!isValidURL(res2.data)) {
@@ -90,8 +126,7 @@
         }
 
         //store derived and private key in local storage?
-        localStorage.setItem("derived", stringKey);
-        localStorage.setItem("private", privateKey);
+        localStorage.setItem("private", cryptico.privateKeyString(privateKey));
         localStorage.setItem("public", publicKey);
 
         window.open(res2.data, "_self")

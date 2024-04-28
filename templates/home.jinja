@@ -37,7 +37,7 @@
 <!--Navbar, you'll see the username here-->
 <nav style="border-bottom: 1px solid black;">
     <ol style="float: right">
-        <li style="display:inline-block">Username: {{ username }} </li>
+        <li style="display:inline-block">Username: {{ username | escape }} </li>
     </ol>
 </nav>
 
@@ -48,16 +48,15 @@
         {% if friends %}
         {% for friend in friends %}
         <li style="display:inline-block">
-            <div class="received">
-                <span>{{ friend.username }}</span>
-                <button onclick="join_room( '{{ friend.username }}' )">Chat</button>
+            <div class="{{ friend.username | escape }}">
+                <span>{{ friend.username | escape}}</span>
+                <button onclick="join_room( '{{ friend.username | escape }}' )">Chat</button>
             </div>
         </li>
         {% endfor %}
         {% else %}
-        <p> You have no friends :&#40;
-        <p>
-            {% endif %}
+
+        {% endif %}
     </ul>
 </div>
 
@@ -67,13 +66,14 @@
         {% if pending != [] and pending is not none and pending != -1 %}
         {% for request in pending %}
         <li style="display:inline-block">
-            {{ request.receiver }}
+            <div class="{{ request.receiver | escape }}">
+                {{ request.receiver | escape }}
+            </div>
         </li>
         {% endfor %}
         {% else %}
-        <p> You have no pending requests!
-        <p>
-            {% endif %}
+
+        {% endif %}
     </ul>
 </div>
 
@@ -83,21 +83,19 @@
         {% if received != [] and received is not none and received != -1 %}
         {% for request in received %}
         <li style="display:inline-block">
-            <div class="received">
-                <span>{{ request.sender }}</span>
-                <button onclick="accept('{{ request.sender }}')">Accept</button>
-                <button onclick="decline('{{ request.sender }}')">Decline</button>
+            <div class="{{ request.sender | escape }}">
+                <span>{{ request.sender | escape }}</span>
+                <button onclick="accept('{{ request.sender | escape }}')">Accept</button>
+                <button onclick="decline('{{ request.sender | escape }}')">Decline</button>
             </div>
         </li>
         {% endfor %}
         {% else %}
-        <p> No one wants to be your friend :&#40;
-        <p>
-            {% endif %}
+
+        {% endif %}
     </ul>
 </div>
 
-<h1>WhyApp </h1>
 
 <main>
     <!-- The messages are displayed here -->
@@ -137,6 +135,19 @@
 <script>
     let room_id = 0;
 
+    (function (c) {
+        var parametersBigint = ["n", "d", "p", "q", "dmp1", "dmq1", "coeff"];
+        c.privateKeyFromString = function (string) {
+            var keyObj = JSON.parse(string);
+            var rsa = new RSAKey();
+            parametersBigint.forEach(function (parameter) {
+                rsa[parameter] = parseBigInt(c.b64to16(keyObj[parameter].split("|")[0]), 16);
+            });
+            rsa.e = parseInt("03", 16);
+            return rsa
+        }
+    })(cryptico)
+
 
     // when the user presses the "Enter" key inside of the "message box", 
     // the message is sent to the server
@@ -174,15 +185,16 @@
         room_id = parseInt(Cookies.get("room_id"));
     })
 
+    //xss input sanitization
+    function htmlEncode(str) {
+        return String(str).replace(/[^\w. :]/gi, function (c) {
+            return '&#' + c.charCodeAt(0) + ';';
+        });
+    }
 
-    // Here's the Socket IO part of the code
-    // things get a bit complicated here so brace yourselves :P
-    let username = "{{ username }}";
-    let session_id = "{{ session_id }}"
-    let publicKey = null;
+    let username = htmlEncode("{{ username }}");
 
-    Cookies.set('username', username);
-    Cookies.set('session_id', session_id)
+    Cookies.set('username', username, { secure: true, expires: 1 });
 
     // initializes the socket
     const socket = io();
@@ -190,7 +202,8 @@
     socket.on("pubkey_first", (data) => {
         localStorage.setItem(data.guy, data.pubkey);
         let pubkey = localStorage.getItem('public');
-        socket.emit("exchange", username, data.guy, pubkey, session_id, (res) => {
+        let friendname = Cookies.get('friendname');
+        socket.emit("exchange", friendname, pubkey, (res) => {
             if (typeof res == "string") {
                 alert(res);
                 return;
@@ -202,75 +215,92 @@
         localStorage.setItem(data.guy, data.pubkey);
     })
 
-    // an incoming message arrives, we'll add the message to the message box
-    socket.on("incoming", (username, msg, color = "black", msgtype) => {
-        if (msgtype == 'msg') {
-            try {
-                let priv = localStorage.getItem("private");
-                msg = cryptico.decrypt(msg.cipher, priv);
-            } catch (error) {
-                console.error("Error:", error.message);
+    socket.on("historydump", (data) => {
+        for (let i = 0; i < data.length; i++) {
+            let e = data[i]
+            if (e[2] == 'msg') {
+                try {
+                    let priv = cryptico.privateKeyFromString(localStorage.getItem("private"));
+                    console.log(e[0].cipher)
+                    let a = cryptico.decrypt((e[0]).cipher, priv);
+                    add_message(a.plaintext, e[1]);
+                } catch (error) {
+                    console.error("Decryption failed: ", error);
+                }
+            } else {
+                add_message(('Server: ' + e[0]), e[1])
             }
-
         }
-
-        add_message(msg, color);
-
     })
 
+    // an incoming message arrives, we'll add the message to the message box
+    socket.on("incoming", (msg, color, msgtype) => {
+        if (msgtype == 'msg') {
+            try {
 
-    function accept(sender_name) {
-
-        socket.emit("accept", sender_name, username, session_id, (res) => {
-            if (typeof res == "string") {
-                alert(res);
-                return;
+                let priv = cryptico.privateKeyFromString(localStorage.getItem("private"));
+                let friendpub = cryptico.publicKeyID(localStorage.getItem(Cookies.get('friendname')));
+                let a = (cryptico.decrypt(msg.cipher, priv));
+                console.log(a)
+                if (cryptico.publicKeyID(a.publicKeyString) == friendpub) {
+                    console.log('ARRR')
+                    add_message(a.plaintext, color);
+                    let pubkey = localStorage.getItem('public');
+                    let newmsg = cryptico.encrypt(a.plaintext, pubkey)
+                    socket.emit("receiver_encrypt", newmsg, room_id);
+                }
+            } catch (error) {
+                console.error("Decryption failed", error);
             }
-            // friends.push(res);
-        });
-
-        //add new friend to friend list on screen
-        let friend_list = $("#friend_list").val();
-        add_list_item(sender_name, friend_list);
-
-    }
-
+        } else {
+            add_message(('Server: ' + msg), color);
+        }
+    })
 
 
     // we'll send the message to the server by emitting a "send" event
     function send() {
-        let message = $("#message").val();
-        $("#message").val("");
+        //xss
+        let tempmsg = htmlEncode($("#message").val());
 
-        add_message(message, "black");
-
+        let message = username + ": " + tempmsg
 
         //encrypt message with receiver's public key (encrypt_key)
         let friendname = Cookies.get('friendname');
-        let encrypt_key = localStorage.getItem(friendname);
-        let cipher_text = cryptico.encrypt(message, encrypt_key);
+        let friend_key = localStorage.getItem(friendname);
+        let our_key = localStorage.getItem('public');
 
-        console.log(`Encrypted text: ${cipher_text}`);
+        let priv = cryptico.privateKeyFromString(localStorage.getItem("private"));
 
-        socket.emit("send", username, cipher_text, room_id, session_id, (res) => {
+        let forfriend = cryptico.encrypt(message, friend_key, priv);
+        let forus = cryptico.encrypt(message, our_key);
+
+        socket.emit("send", friendname, forfriend, forus, room_id, (res) => {
             if (typeof res == "string") {
                 alert(res);
                 return;
+            } else {
+                add_message(message, "black");
             }
         });
+
     }
 
     // we emit a join room event to the server to join a room
-    function join_room(receiver) {
+    function join_room(rec) {
+        //xss
+        let receiver = htmlEncode(rec)
+        console.log(receiver)
 
         // pass in the receiver of our message to the server
         // as well as the current user's username
         Cookies.set('friendname', receiver);
+        console.log()
         let publickey = localStorage.getItem('public');
-        socket.emit("join", username, receiver, publickey, session_id, (res) => {
+        socket.emit("join", receiver, publickey, (res) => {
             // res is a string with the error message if the error occurs
             // this is a pretty bad way of doing error handling, but watevs
-            if (typeof res != "number") {
+            if (typeof res == "string") {
                 alert(res);
                 return;
             }
@@ -284,25 +314,15 @@
             $("#chat_box").hide();
             $("#input_box").show();
 
-            receiver += '_history';
-
-            if (!localStorage.getItem(receiver)) {
-                const history = [];
-                localStorage.setItem(receiver, JSON.stringify(history));
-            }
-
-
-            add_message()
 
         });
-
-
     }
     // function when the user clicks on "Leave Room"
     // emits a "leave" event, telling the server that we want to leave the room
     function leave() {
-        add_message(`${username} has left the room`, 'red');
-        socket.emit("leave", username, room_id, session_id, (res) => {
+        let friendname = Cookies.get('friendname')
+        //add_message(`${username} has left the room`, 'red');
+        socket.emit("leave", friendname, room_id, (res) => {
             if (typeof res == "string") {
                 alert(res);
                 return;
@@ -310,67 +330,231 @@
 
             }
         });
-        Cookies.remove("room_id");
-        Cookies.remove("friendname");
         $("#input_box").hide();
+        let box = $("#message_box");
+        box.empty();
+        room_id = 0;
     }
 
-    function decline(sender_name) {
-        socket.emit("decline", sender_name, username, session_id, (res) => {
+    function accept(sender) {
+        let sender_name = htmlEncode(sender);
+
+        socket.emit("accept", sender_name, (res) => {
             if (typeof res == "string") {
                 alert(res);
                 return;
             }
+            displayFriend(sender_name)
+            removeRequest(sender_name)
+
+        });
+
+    }
+
+    function decline(sender) {
+        let sender_name = htmlEncode(sender);
+
+        socket.emit("decline", sender_name, (res) => {
+            if (typeof res == "string") {
+                alert(res);
+                return;
+            } else {
+                removeRequest(sender_name)
+            }
+        });
+
+    }
+
+    // Removes a displayed sent request (Client side)
+    function removeRequest(senderName) {
+        // Get all <li> elements inside the received requests list
+        let liElements = document.querySelectorAll("#received_requests li");
+        console.log(liElements)
+        // Loop through each <li> element
+        liElements.forEach(function (li) {
+            // Find the <div> element inside the <li>
+            var div = li.querySelector("." + senderName);
+            console.log(div)
+            if (div) {
+                // Remove the <div> element from its parent node (the <li>)
+                div.parentNode.removeChild(div);
+                console.log("removed")
+            }
         });
     }
+
+
+    // Emit a send_request event to the server to make a new friend request
+    function send_friend_request() {
+        //xss
+        let new_friend = htmlEncode($("#new_friend").val());
+        console.log(new_friend)
+
+        // pass in the receiver of our message to the server
+        // as well as the current user's username
+        socket.emit("send_request", new_friend, (res) => {
+            if (res != 0) {
+                alert(res);
+                return;
+            } else {
+                displayPending(new_friend);
+            }
+        });
+
+
+    }
+
+    // Displays your pending requests (client side)
+    function displayPending(fri) {
+        // Get the UL element
+
+        //xss
+        let friend = htmlEncode(fri);
+
+        var ul = document.getElementById("pending_requests");
+
+        //li
+        var li = document.createElement("li");
+        li.style.display = "inline-block";
+
+        //div
+        var div = document.createElement("div");
+        div.className = friend;
+
+        //span
+        var span = document.createElement("span");
+        span.textContent = htmlEncode(friend);
+
+        div.appendChild(span);
+        li.appendChild(div);
+        ul.appendChild(li);
+    }
+
+
+    //Check if one of your requests got accepted
+    socket.on("check_accepted_requests", (sender) => {
+        displayFriend(sender);
+        removePending(sender);
+    })
+
+    //Check if one of your requests got declined
+    socket.on("check_declined_requests", (sender) => {
+        removePending(sender);
+    })
+
+    // Removes pending request (client side)
+    function removePending(senderName) {
+        let liElements = document.querySelectorAll("#pending_requests li");
+        console.log(liElements);
+        liElements.forEach(function (li) {
+            var div = li.querySelector("." + senderName);
+            console.log(div)
+            if (div) {
+                div.parentNode.removeChild(div);
+                console.log("removed");
+            }
+        });
+    }
+
+    function displayFriend(fri) {
+
+        let friend = htmlEncode(fri);
+
+        var ul = document.getElementById("friend_list");
+
+        //li
+        var li = document.createElement("li");
+        li.style.display = "inline-block";
+
+        //div
+        var div = document.createElement("div");
+        div.className = friend;
+
+        //span
+        var span = document.createElement("span");
+        span.textContent = htmlEncode(friend);
+
+        //chat button
+        var chatBtn = document.createElement("button");
+        chatBtn.textContent = "Chat";
+        chatBtn.onclick = function () {
+            join_room(friend);
+        };
+
+        div.appendChild(span);
+        div.appendChild(chatBtn);
+        li.appendChild(div);
+        ul.appendChild(li);
+    }
+
+    //Check for any incoming requests
+    socket.on("incoming_request", (sender) => {
+        if (sender == Cookies.get('username')) {
+
+        } else {
+            displayRequest(sender);
+        }
+    })
+
+    //Displays a request that you received from someone (client side)
+    function displayRequest(sender) {
+        //xss
+        let sender_name = htmlEncode(sender)
+
+        var ul = document.getElementById("received_requests");
+
+        var li = document.createElement("li");
+        li.style.display = "inline-block";
+
+        var div = document.createElement("div");
+        div.className = sender;
+
+        //span
+        var span = document.createElement("span");
+        span.textContent = htmlEncode(sender_name);
+
+        //accept button
+        var acceptBtn = document.createElement("button");
+        acceptBtn.textContent = "Accept";
+        acceptBtn.onclick = function () {
+            accept(sender_name);
+        };
+
+        //decline button
+        var declineBtn = document.createElement("button");
+        declineBtn.textContent = "Decline";
+        declineBtn.onclick = function () {
+            decline(sender_name);
+        };
+
+        // Append span, buttons to  div
+        div.appendChild(span);
+        div.appendChild(acceptBtn);
+        div.appendChild(declineBtn);
+
+        // Append div to list
+        li.appendChild(div);
+
+        // Append list to ul
+        ul.appendChild(li);
+    }
+
 
     // function to add a message to the message box
     // called when an incoming message has reached a client
     function add_message(message, color, flag = false) {
         let box = $("#message_box");
-        let child = $(`<p style="color:${color}; margin: 0px;"></p>`).text(message);
+
+        let child = $(`<p style="color:${color}; margin: 0px;"></p>`).text(htmlEncode(message));//xss prevention
         box.append(child);
-
-
-
-        if (flag == true) {
-            let friend_username = Cookies.get('friendname');
-            friend_username += '_history';
-
-            let history = JSON.parse(localStorage.getItem(friend_username)) || [];
-            history.push([message, color]);
-            localStorage.setItem(friend_username, JSON.stringify(history));
-        }
-
     }
 
-
-    // emit a send_request event to the server to make a new friend request
-    function send_friend_request() {
-
-        let new_friend = $("#new_friend").val();
-
-        // pass in the receiver of our message to the server
-        // as well as the current user's username
-        socket.emit("send_request", username, new_friend, session_id, (res) => {
-            if (typeof res == "string") {
-                alert(res);
-                return;
-            }
-            //append new_friend to pending requests
-            let pending_requests = $("#pending_requests").val();
-            add_list_item(new_friend, pending_requests);
-        });
-    }
-
-    function add_list_item(item, list) {
-        //create list item
-        var list_item = document.createElement("li");
-        list_item.innerText = item;
-
-        list.appendChild(list_item);
-    }
-
+    window.onbeforeunload = function () {
+        Cookies.remove("room_id");
+        Cookies.remove("username");
+        Cookies.remove("friendname");
+        localStorage.clear();
+    };
 
 </script>
 {% endblock %}
