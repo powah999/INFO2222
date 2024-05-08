@@ -12,14 +12,14 @@ Sign up page, pretty much the same as login.
 <input id="password" type="password" />
 <br><br>
 <label for="account">Please select an account type:</label>
-  <select name="account" id="accounts">
+<select name="account" id="accounts">
     <option value="student">Student</option>
     <optgroup label="staff">
         <option value="academic">Academic</option>
         <option value="administrative staff">Administrative staff</option>
         <option value="admin user">Admin user</option>
     </optgroup>
-  </select>
+</select>
 <button onclick="signup()">Sign up</button>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js"></script>
@@ -83,9 +83,9 @@ Sign up page, pretty much the same as login.
         var account = $("#account").val();
         let loginURL = "{{ url_for('signup_user') }}";
 
-        if (!isValidPwd(password)) {
-            return;
-        }
+        //if (!isValidPwd(password)) {
+        //    return;
+        //}
 
         let res1 = await axios.post(loginURL, {
             username: username,
@@ -100,13 +100,11 @@ Sign up page, pretty much the same as login.
         //salt
         var salt2 = CryptoJS.lib.WordArray.random(128 / 8);
         var salt2String = salt2.toString(CryptoJS.enc.Hex)
-        console.log('salt2string')
-        console.log(salt2String)
+
 
         //password hash
         var hash = CryptoJS.SHA3((password + salt2String), { outputLength: 256 }).toString(CryptoJS.enc.Hex);
-        console.log('hash')
-        console.log(hash)
+
 
         //PBKDF2 key object and string format
         var derivedKey = CryptoJS.PBKDF2(password, salt2, {
@@ -128,8 +126,8 @@ Sign up page, pretty much the same as login.
             requestType: 'key'
         });
 
-        if (!isValidURL(res.data)) {
-            alert(res.data);
+        if (!isValidURL(res2.data)) {
+            alert(res2.data);
             return;
         }
 
@@ -137,7 +135,7 @@ Sign up page, pretty much the same as login.
         localStorage.setItem("private", cryptico.privateKeyString(privateKey));
         localStorage.setItem("public", publicKey);
 
-        window.open(res.data, "_self")
+        window.open(res2.data, "_self")
     }
 </script>
 {% endblock %}

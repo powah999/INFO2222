@@ -19,78 +19,25 @@ public_keys = db.Public()
 session_ids = {}
 session_tokens = {}
 
-# when the client connects to a socket
-# this event is emitted when the io() function is called in JS
-
-# def cmp(string_a, string_b):
-#     li = []
-#     string_a = set(string_a)
-
-#     for char in string_a:
-#         if char not in string_b:
-#             li.append(char)
-#     if len(li) > 0:
-#         return f'Your username should only contain alphanumeric ("a" or "1"), underscore ("_"), period ("."), and space " " characters! '
-#     return True
-
-# def cleaner(sender_name = -99, receiver_name =-99, message = -99, room_id=-99, pubkey_client=-99):
-
-#     temp = []
-
-#     if sender_name != -99:
-#         if type(sender_name) != str:
-#             return 'Invalid username/sender name: socket emit'
-#         sender_name = bleach.clean(sender_name)
-#         temp.append(sender_name)
-
-#     if receiver_name != -99:
-#         if type(receiver_name) != str:
-#             return 'Invalid receiver name: socket emit'
-#         receiver_name = bleach.clean(receiver_name)
-#         temp.append(receiver_name)
-
-#     if message != -99:
-#         if type(message) != dict:
-#             return 'Invalid message: socket emit'
-        
-#         for key, value in message.items():
-#             if type(message[key]) == str:
-#                 message[key] = bleach.clean(value)
-#         temp.append(message)
-        
-#     if room_id != -99:
-#         if type(room_id) != int:
-#             return 'Invalid socket emit'
-#         temp.append(room_id)
-
-#     if pubkey_client != -99:
-#         if type(pubkey_client) != str:
-#             return 'Invalid pubkey: socket emit'
-#         pubkey_client = bleach.clean(pubkey_client)
-#         temp.append(pubkey_client)
-
-#     return temp
-
 @socketio.on('connect')
 def connect():
-    if 'username' not in session:
-        print('\nNo session\n')
-        raise ConnectionRefusedError('Connection refused.')
-    
-
-
     username_session = session.get('username')
 
-    if session_tokens.get(username_session) == None:
-        raise ConnectionRefusedError('Connection refused.')
+    #uncomment once final
+    # if 'username' not in session:
+    #     print('\nNo session\n')
+    #     raise ConnectionRefusedError('Connection refused.')
+    
+    # if session_tokens.get(username_session) == None:
+    #     raise ConnectionRefusedError('Connection refused.')
 
-    if session_tokens.get(username_session) != session['token']:
-        print('\nUser has not logged/signup yet\n')
-        session_ids.pop(username_session, None)
-        public_keys.keys.pop(username_session, None)
-        session_tokens.pop(username_session, None)
-        session.clear()
-        raise ConnectionRefusedError('Connection refused.')
+    # if session_tokens.get(username_session) != session['token']:
+    #     print('\nUser has not logged/signup yet\n')
+    #     session_ids.pop(username_session, None)
+    #     public_keys.keys.pop(username_session, None)
+    #     session_tokens.pop(username_session, None)
+    #     session.clear()
+    #     raise ConnectionRefusedError('Connection refused.')
 
     session_ids[username_session] = request.sid
 
@@ -229,11 +176,12 @@ def join(receiver_name, pubkey):
     # Checks if someone sends a request to masquarade a user
     pubkey_client = public_keys.get_key(sender_name)
 
-    if pubkey_client == None:
-        return 'User is not in session'
+    #uncomment once final
+    # if pubkey_client == None:
+    #     return 'User is not in session'
 
-    if pubkey != pubkey_client:
-        return 'Your pubkey does not match user"s pubkey'
+    # if pubkey != pubkey_client:
+    #     return 'Your pubkey does not match user"s pubkey'
     
     if receiver_name == sender_name:
         return 'Cant talk to yourself'
@@ -319,11 +267,12 @@ def exchage(receiver_name, pubkey):
 
     pubkey_client = public_keys.get_key(sender_name)
 
-    if pubkey_client == None:
-        return 'User not in session'
+    #uncomment once final
+    # if pubkey_client == None:
+    #     return 'User not in session'
 
-    if pubkey != pubkey_client:
-        return 'Your pubkey does not match user"s pubkey'
+    # if pubkey != pubkey_client:
+    #     return 'Your pubkey does not match user"s pubkey'
     
     print(f'\n\n Sending {receiver_name} the public key of {sender_name}: {pubkey}\n')
 
@@ -397,3 +346,56 @@ def decline(sender_name):
     else: 
         emit("check_declined_requests", (receiver_name), to=session_ids.get(sender_name))
         return 0
+    
+
+# when the client connects to a socket
+# this event is emitted when the io() function is called in JS
+
+# def cmp(string_a, string_b):
+#     li = []
+#     string_a = set(string_a)
+
+#     for char in string_a:
+#         if char not in string_b:
+#             li.append(char)
+#     if len(li) > 0:
+#         return f'Your username should only contain alphanumeric ("a" or "1"), underscore ("_"), period ("."), and space " " characters! '
+#     return True
+
+# def cleaner(sender_name = -99, receiver_name =-99, message = -99, room_id=-99, pubkey_client=-99):
+
+#     temp = []
+
+#     if sender_name != -99:
+#         if type(sender_name) != str:
+#             return 'Invalid username/sender name: socket emit'
+#         sender_name = bleach.clean(sender_name)
+#         temp.append(sender_name)
+
+#     if receiver_name != -99:
+#         if type(receiver_name) != str:
+#             return 'Invalid receiver name: socket emit'
+#         receiver_name = bleach.clean(receiver_name)
+#         temp.append(receiver_name)
+
+#     if message != -99:
+#         if type(message) != dict:
+#             return 'Invalid message: socket emit'
+        
+#         for key, value in message.items():
+#             if type(message[key]) == str:
+#                 message[key] = bleach.clean(value)
+#         temp.append(message)
+        
+#     if room_id != -99:
+#         if type(room_id) != int:
+#             return 'Invalid socket emit'
+#         temp.append(room_id)
+
+#     if pubkey_client != -99:
+#         if type(pubkey_client) != str:
+#             return 'Invalid pubkey: socket emit'
+#         pubkey_client = bleach.clean(pubkey_client)
+#         temp.append(pubkey_client)
+
+#     return temp

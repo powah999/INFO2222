@@ -243,9 +243,9 @@ def home():
     if session.get('username') != username:
         print('\n your session is not equal to the users actual session\n')
         return redirect(url_for('login'))    
-        
-    if session.get('username') not in session_tokens.keys() or (session.get('token') != session_tokens.get(session.get('username'))):
-        return redirect(url_for('login'))     
+    # uncomment once final
+    # if session.get('username') not in session_tokens.keys() or (session.get('token') != session_tokens.get(session.get('username'))):
+    #     return redirect(url_for('login'))     
 
     return render_template("home.jinja", username=username, friends=db.get_friends(username), received=db.get_received(username), pending=db.get_sent(username))
 

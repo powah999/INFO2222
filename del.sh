@@ -27,3 +27,14 @@ if [ -d "$directory" ]; then
 else
     echo "Directory ${directory} does not exist."
 fi
+
+directory="flask_session"
+
+
+if [ -d "$directory" ]; then
+
+    rm -f "${directory}"/*
+    echo "All files in ${directory} have been removed."
+else
+    echo "Directory ${directory} does not exist."
+fi

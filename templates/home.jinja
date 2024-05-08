@@ -45,7 +45,7 @@
 <div style="border-bottom: 1px solid black;">
     <ul id="friend_list" style="float: left">
         <h2>My friends:</h2>
-        {% if friends %}
+        {% if friends != [] and friends is not none and friends != -1 %}
         {% for friend in friends %}
         <li style="display:inline-block">
             <div class="{{ friend.username | escape }}">
@@ -63,7 +63,7 @@
 <div>
     <ul id="pending_requests" style="float: right">
         <h2>Pending friend requests:</h2>
-        {% if pending %}
+        {% if pending != [] and pending is not none and pending != -1 %}
         {% for request in pending %}
         <li style="display:inline-block">
             <div class="{{ request.receiver | escape }}">
@@ -80,7 +80,7 @@
 <div>
     <ul id="received_requests" style="float: right">
         <h2>Received friend requests:</h2>
-        {% if received %}
+        {% if received != [] and received is not none and received != -1 %}
         {% for request in received %}
         <li style="display:inline-block">
             <div class="{{ request.sender | escape }}">
@@ -551,9 +551,10 @@
 
     window.onbeforeunload = function () {
         Cookies.remove("room_id");
-        Cookies.remove("username");
         Cookies.remove("friendname");
-        localStorage.clear();
+        //uncomment once final
+        //Cookies.remove("username");
+        //localStorage.clear();
     };
 
 </script>
