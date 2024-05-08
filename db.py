@@ -18,9 +18,9 @@ engine = create_engine("sqlite:///database/main.db", echo=False)
 Base.metadata.create_all(engine)
 
 # inserts a user to the database
-def insert_user(username: str, hashed_password: str, salt: str, salt2: str):
+def insert_user(username: str, hashed_password: str, salt: str, salt2: str, account: str, staff_role='N/A'):
     with Session(engine) as session:
-        user = User(username=username, password=hashed_password, salt=salt, salt2=salt2)
+        user = User(username=username, password=hashed_password, salt=salt, salt2=salt2, account=account, staff_role=staff_role)
         session.add(user)
         session.commit()
         return 0
@@ -245,3 +245,56 @@ def get_user(username: str):
             return -1
         
         return user
+"""
+
+#create post
+def create_article(username, title, content):
+    with Session(engine) as session:
+        user = get_user(username)
+
+        #check if user is muted --> return "User is muted from creating posts"
+
+        #create article 
+        article = Article(user_id=user.id, title=title, content=content)
+        user.articles.append(article)
+        session.add(article)
+        session.commit()
+
+def get_user_articles(username: str):
+     with Session(engine) as session:
+        user = get_user(username)
+        articles = session.query(Article).filter_by(author=user).all()
+
+        if not articles:
+            print("\n User or articles does not exist \n")
+            return -1
+        
+        return articles
+
+#gets all existing articles to show on screen
+def get_all_articles():
+    with Session(engine) as session:
+        articles = session.query(Article).all()
+
+        if not articles:
+            print("\n No articles exist \n")
+            return -1
+        
+        return articles
+
+#only staff allowed    
+def delete_article():
+
+#edit your own article
+def update_article():
+
+#edit others articles (only staff allowed)
+def edit_article():
+
+#make comment on article
+def comment():
+
+#only staff allowed
+def delete_comment():
+
+"""

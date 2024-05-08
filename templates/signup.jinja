@@ -10,6 +10,16 @@ Sign up page, pretty much the same as login.
 <input id="username" />
 <p>Password</p>
 <input id="password" type="password" />
+<br><br>
+<label for="account">Please select an account type:</label>
+  <select name="account" id="accounts">
+    <option value="student">Student</option>
+    <optgroup label="staff">
+        <option value="academic">Academic</option>
+        <option value="administrative staff">Administrative staff</option>
+        <option value="admin user">Admin user</option>
+    </optgroup>
+  </select>
 <button onclick="signup()">Sign up</button>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js"></script>
@@ -70,6 +80,7 @@ Sign up page, pretty much the same as login.
 
         var password = $("#password").val();
         var username = htmlEncode($("#username").val());
+        var account = $("#account").val();
         let loginURL = "{{ url_for('signup_user') }}";
 
         if (!isValidPwd(password)) {
@@ -113,6 +124,7 @@ Sign up page, pretty much the same as login.
             password: hash,
             public: publicKey,
             salt: salt2String,
+            account: account,
             requestType: 'key'
         });
 

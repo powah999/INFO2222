@@ -180,6 +180,14 @@ def signup_user():
                 public = data.get('public')
                 print(f"public: {public}")
 
+                account = data.get('account')
+                print(f"account: {account}")
+                if account != "student":
+                    staff_role = account
+                    account = "staff"
+                else:
+                    staff_role = "N/A"
+
                 public_b = bleach.clean(data.get("public"))
                 print(f'string_b: {string_b}')
                 check = comparestrings(public, public_b)
@@ -193,7 +201,7 @@ def signup_user():
                 salt = bcrypt.gensalt()
                 hash = bcrypt.kdf(password=password, salt=salt, desired_key_bytes=60, rounds=200)
 
-                db.insert_user(username, hash, salt, salt2)
+                db.insert_user(username, hash, salt, salt2, account, staff_role)
                 public_keys.add_key(username, public)
 
                 attempts.reset(username)
@@ -240,6 +248,27 @@ def home():
         return redirect(url_for('login'))     
 
     return render_template("home.jinja", username=username, friends=db.get_friends(username), received=db.get_received(username), pending=db.get_sent(username))
+
+
+#page containing all posts/knowledge repository
+@app.route("/articles", methods=['POST'])
+def articles():
+    if not request.is_json:
+        abort(404)
+
+    data = request.json
+    
+    #get article content from user
+    author_name = session.get('username')
+    author = db.get_user(author_name)
+    title = data.get("title")
+    content = data.get("content")
+    
+    #create article
+
+
+    return render_template("articles.html")
+
 
 if __name__ == '__main__':
     socketio.run(app, host="localhost", port=5000 ,debug=True, ssl_context=('localhost.crt', 'localhost.key'))

@@ -10,18 +10,24 @@ Prisma docs also looks so much better in comparison
 or use SQLite, if you're not into fancy ORMs (but be mindful of Injection attacks :) )
 '''
 
-from sqlalchemy import String, ForeignKey, Integer, Boolean, Column, MetaData, Table, UniqueConstraint
+from sqlalchemy import String, ForeignKey, Integer, Text, UniqueConstraint, DateTime, CheckConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from typing import Dict, List
+import datetime
+import enum
 
 
 # data models
 class Base(DeclarativeBase):
     pass
 
+def mydefault(context):
+    return context.get_current_parameters()["account"] 
+
 # model to store user information
 class User(Base):
     __tablename__ = "user"
+    
     
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     username: Mapped[str] = mapped_column(String, unique=True)
@@ -29,11 +35,23 @@ class User(Base):
     salt: Mapped[str] = mapped_column(String)
     salt2: Mapped[str] = mapped_column(String)
 
+    ALLOWED_ACCOUNTS = ('student', 'staff')
+    account: Mapped[str] = mapped_column(String)
+
+    STAFF_ROLES = ('N/A', 'academic', 'administrative staff', 'admin user')
+    staff_role: Mapped[str] = mapped_column(String, default='N/A')
+
     friends: Mapped[List["Friend"]] = relationship('Friend', secondary='link')
+    
+    articles: Mapped[List["Article"]] = relationship("Article", backref='author')
+    comment: Mapped[List["Comment"]] = relationship("Comment", backref='author')
 
     def __repr__(self):
         return f"(Username: {self.username}, Password: {self.password}, Salt: {self.salt})"     
 
+    __table_args__ = (CheckConstraint(account.in_(ALLOWED_ACCOUNTS), name='check_valid_account_type'), 
+                      CheckConstraint(staff_role.in_(STAFF_ROLES), name ='check_valid_role'),
+                      )
 
 
 # existing friends
@@ -75,6 +93,46 @@ class History(Base):
     sender: Mapped[str] = mapped_column(String)
     receiver: Mapped[str] = mapped_column(String)
     history: Mapped[str] = mapped_column(String)
+
+"""
+class Students(Base):
+    __tablename__ = "students"
+
+    user_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    username: Mapped[str] = mapped_column(String, unique=True)
+
+class Staff(Base):
+    __tablename__ = "staff"
+
+    user_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    username: Mapped[str] = mapped_column(String, unique=True)
+    role: Mapped[str] = 
+
+"""
+
+class Article(Base):
+    __tablename__ = 'article'
+
+    id: Mapped[int] = mapped_column(Integer, primary_key = True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("user.id"), nullable=False)
+    #author = Mapped[str] = mapped_column(, default="Anonymous")
+    title: Mapped[str] = mapped_column(String)
+    content: Mapped[str] = mapped_column(Text)
+    date: Mapped[datetime.date] = mapped_column(DateTime, default=datetime.date.today())
+    
+    comments: Mapped[List["Comment"]] = relationship("Comment", backref='post')
+
+class Comment(Base):
+    __tablename__ = 'comment'
+
+    id: Mapped[int] = mapped_column(Integer, primary_key = True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey('user.id'), nullable=False)
+    article_id: Mapped[int] = mapped_column(Integer, ForeignKey('article.id'), nullable=False)
+    
+    #author = Mapped[str] = mapped_column(String, default="Anonymous")
+    content: Mapped[str] = mapped_column(Text)
+    date: Mapped[datetime.date] = mapped_column(DateTime, default=datetime.date.today())
+
 
 # stateful counter used to generate the room id
 class Counter():
