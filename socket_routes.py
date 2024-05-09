@@ -41,6 +41,8 @@ def connect():
 
     session_ids[username_session] = request.sid
 
+    #updates online/offline status of friend
+    emit('status_update', {'username': username_session, 'status': 'online'}, broadcast=True)
 
     print(f"\nusername: {username_session} CONNECTED")
 
@@ -51,6 +53,15 @@ def connect():
     
     print('\nPublic keys:\n')
     print(public_keys.keys)
+
+#gets online/offlien status of friend
+@socketio.on("get_status")
+def get_status(username):
+    print("HEY IS THIS WORKING")
+    if session_ids.get(username) != None:
+        print("HEY IS THIS ONLINE?")
+        return 'online'
+    return 'offline'
 
 # event when client disconnects
 # quite unreliable use sparingly
@@ -70,6 +81,9 @@ def disconnect():
     
     print('\nPublic keys:\n')
     print(public_keys.keys)
+
+    #updates online/offlien status of friend
+    emit('status_update', {'username': username, 'status': 'offline'}, broadcast=True)
 
     room_id = room.room_exists(username)
     if room_id is None:
@@ -284,6 +298,10 @@ def send_request(receiver_name):
 
     sender_name = request.cookies.get("username")
 
+    print(f"\nrequest.sid:   {request.sid}")
+    print(session_ids.get(sender_name))
+    print(sender_name)
+
     if session_ids.get(sender_name) != request.sid:
         return 'Your SID does not match the one stored in server'
     
@@ -307,8 +325,24 @@ def send_request(receiver_name):
     else:
         emit("incoming_request", (sender_name), to=session_ids.get(receiver_name))
         return 0
+
+@socketio.on("remove_friend")
+def remove_friend(friendname):
+
+    username = request.cookies.get("username")
+
+    if session_ids.get(username) != request.sid:
+        return 'Your SID does not match the one stored in server'
+
+    flag = db.remove_friend(username, friendname)
+
+    if flag != 0:
+        return flag
+    else: 
+        emit("youGotRemoved", (username), to=session_ids.get(friendname))
+        return 0
     
-    
+
 @socketio.on("accept")
 def accept(sender_name):
 

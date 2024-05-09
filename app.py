@@ -246,9 +246,18 @@ def home():
         return redirect(url_for('login'))    
     # uncomment once final
     # if session.get('username') not in session_tokens.keys() or (session.get('token') != session_tokens.get(session.get('username'))):
-    #     return redirect(url_for('login'))     
+    #     return redirect(url_for('login'))    
 
-    return render_template("home.jinja", username=username, friends=db.get_friends(username), received=db.get_received(username), pending=db.get_sent(username))
+    friends = db.get_friends(username)
+    
+    friend_status = {}
+    for friend in friends:
+        if friend.username not in session_ids.keys():
+            friend_status[friend.username] = 'offline'
+        else:
+            friend_status[friend.username] = 'online'
+
+    return render_template("home.jinja", username=username, friends=friends, received=db.get_received(username), pending=db.get_sent(username), friend_status=friend_status)
 
 
 #page containing all posts/knowledge repository
