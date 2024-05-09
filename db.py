@@ -284,20 +284,30 @@ def get_all_articles():
         return articles
 
 #only staff allowed    
-def delete_article(username):
-    #check if staff
+def delete_article(username, article_id):
+    with Session(engine) as session:
+        user = get_user(username=username)
+        #check if staff
+        if user.account != "staff":
+            print("Students cannot delete articles")
+            return False
+        
+        #remove article from db
+        article = session.query(Article).filter_by(id=article_id).first()
+
+        if article:
+            session.delete(article)
+            return True
+
+        print("Article doesn't exist")
+        return False
+"""
+#edit your own article
+def update_article(username):
     
 
-    #remove article from user
 
-    #remove article from article table
 
-    return 0
-
-"""
-
-#edit your own article
-def update_article():
 
 #edit others articles (only staff allowed)
 def edit_article():

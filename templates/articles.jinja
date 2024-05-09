@@ -2,6 +2,29 @@
 
 
 {% block content %}
+<style>
+    .button {
+        background-color: #b0abd2; 
+        border: none;
+        color: #1b1b1b;
+        padding: 12px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 14px;
+        margin: 4px 2px;
+        cursor: pointer;
+        position: fixed;
+        bottom: 16px;
+        right: 12px;
+        border-radius: 4px;
+    }
+    
+    .button:hover {
+        background-color: #9d83fa;
+    }
+    
+</style>
 
 <div style="padding:20px;margin-top:30px;">
 <h1>Articles</h1>
@@ -21,6 +44,21 @@
 {% endif %}
 
 </div>
+
+<a href="#newarticle">
+    <button class="button">New Article</button>
+</a>
+
+<script>
+
+    function new_article() {
+        
+    }
+
+
+
+</script>
+
 
 {% endblock %}
 
