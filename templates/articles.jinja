@@ -3,4 +3,24 @@
 
 {% block content %}
 
+<div style="padding:20px;margin-top:30px;">
+<h1>Articles</h1>
+<br/>
+
+{% if articles %}
+    {% for article in articles %}
+    <div class="shadow p-3 mb-5 bg-body rounded">
+        <h2>{{ article.title }}</h2><br/>
+        <small>{{ article.date }} {{ article.author.username }} </small><br/><br/>
+        
+        {{ article.content }} <br/><br/>
+    </div>
+    {% endfor %}
+{% else %} 
+    No articles posted yet
+{% endif %}
+
+</div>
+
 {% endblock %}
+

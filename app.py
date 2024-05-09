@@ -140,7 +140,8 @@ def login_user():
                 session_tokens[username] = session.get('token')
                 session_ids[username] = None
 
-                return url_for('home', username=username, friends=db.get_friends(username), received=db.get_received(username), pending=db.get_sent(username))
+                #return url_for('home', username=username, friends=db.get_friends(username), received=db.get_received(username), pending=db.get_sent(username))
+                return url_for('articles')
         else:
             return "pass"
     
@@ -251,24 +252,17 @@ def home():
 
 
 #page containing all posts/knowledge repository
-@app.route("/articles", methods=['POST'])
+@app.route("/articles")
 def articles():
-    if not request.is_json:
-        abort(404)
+    articles = db.get_all_articles()
 
-    data = request.json
-    
-    #get article content from user
-    author_name = session.get('username')
-    author = db.get_user(author_name)
-    title = data.get("title")
-    content = data.get("content")
-    
-    #create article
+    return render_template("articles.jinja", articles=articles)
 
+@app.route("/navbar")
+def navbar():
+    articles = db.get_all_articles()
 
-    return render_template("articles.html")
-
+    return render_template("navbar.jinja", articles=articles)
 
 if __name__ == '__main__':
     socketio.run(app, host="localhost", port=5000 ,debug=True, ssl_context=('localhost.crt', 'localhost.key'))

@@ -245,7 +245,7 @@ def get_user(username: str):
             return -1
         
         return user
-"""
+
 
 #create post
 def create_article(username, title, content):
@@ -256,7 +256,6 @@ def create_article(username, title, content):
 
         #create article 
         article = Article(user_id=user.id, title=title, content=content)
-        user.articles.append(article)
         session.add(article)
         session.commit()
 
@@ -274,16 +273,28 @@ def get_user_articles(username: str):
 #gets all existing articles to show on screen
 def get_all_articles():
     with Session(engine) as session:
-        articles = session.query(Article).all()
-
-        if not articles:
+        
+        if not session.query(Article).first():
             print("\n No articles exist \n")
-            return -1
+            return None
+        
+        #get all articles by date posted
+        articles = session.query(Article).order_by(Article.date)
         
         return articles
 
 #only staff allowed    
-def delete_article():
+def delete_article(username):
+    #check if staff
+    
+
+    #remove article from user
+
+    #remove article from article table
+
+    return 0
+
+"""
 
 #edit your own article
 def update_article():

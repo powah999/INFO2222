@@ -1,0 +1,53 @@
+{% extends 'base.jinja' %}
+
+
+{% block content %}
+
+<style>
+    /* nav bar tabs */   
+    ul.navbar {
+        list-style-type: none;
+        position: fixed;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background-color: #333;
+        }
+
+    /* nav bar display */   
+    ul.navbar li {
+        float: left;
+    }
+
+    ul.navbar li a {
+        display: block;
+        color: white;
+        text-align: center;
+        padding: 14px 16px;
+        text-decoration: none;
+    }
+
+    /* change tab colour when mouse hovers */
+    ul.navbar li a:hover {
+        background-color: #111;
+        }
+    /* change navbar to be stacked for smaller screen sizes */
+    @media screen and (max-width: 600px) {
+        ul.navbar li.right, 
+        ul.navbar li {float:none;}
+        }
+
+</style>
+
+<!--Navbar code / links-->
+<ul class = "navbar">
+    <li><a href="#home">Home</a></li>
+    <li><a href="#requests">Requests</a></li>
+    <li><a href="#messages">Messages</a></li>
+    <li><a href="#archive">Article archive</a></li>
+    <li><a href="#profile">Profile</a></li> 
+</ul>
+
+{% endblock %}
