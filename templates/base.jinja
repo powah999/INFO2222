@@ -43,10 +43,16 @@ Yeah I know it's pretty ugly...
         }
 
         /* change tab colour when mouse hovers */
-        ul.navbar li a:hover {
+        ul.navbar li a:hover:not(.active) {
             background-color: #111;
-            }
-            
+        }
+
+        ul.navbar a.active {
+            background-color: #c767ff;
+        }
+
+        ul.navbar li.right {float: right;}
+
         /* change navbar to be stacked for smaller screen sizes */
         @media screen and (max-width: 600px) {
             ul.navbar li.right, 
@@ -64,6 +70,7 @@ Yeah I know it's pretty ugly...
         <li><a href="#messages">Messages</a></li>
         <li><a href="#archive">Article archive</a></li>
         <li><a href="#profile">Profile</a></li> 
+        <li class="right"><a class="active" href="#signout">Sign Out</a></li>
     </ul>
 
         {% block content %} 
