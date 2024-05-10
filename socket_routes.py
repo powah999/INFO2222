@@ -128,8 +128,6 @@ def receiver_encrypt(message, room_id):
 
     username = request.cookies.get("username")
 
-
-
     if session_ids.get(username) != request.sid:
         return 'Your SID does not match the one stored in server'
     
@@ -380,7 +378,21 @@ def decline(sender_name):
     else: 
         emit("check_declined_requests", (receiver_name), to=session_ids.get(sender_name))
         return 0
+
+@socketio.on("new_post")
+def new_post(title, content):
+    print(title)
+    print(content)
+    print(session["username"])
+
+    if not title or not content:
+        return False
+ 
+    if not db.create_article(username=session["username"], title=title, content=content):
+        return False
     
+    return True
+
 
 # when the client connects to a socket
 # this event is emitted when the io() function is called in JS

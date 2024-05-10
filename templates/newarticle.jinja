@@ -1,8 +1,19 @@
+{% extends 'base.jinja' %}
+
+
+{% block content %}
 <style>
     .content-box {
         width: 300px;
         height: 50px;
     }
+
+    .popup {
+        position: relative;
+        display: inline-block;
+        cursor: pointer;
+        margin-top: 30px;
+        }
 
     .button {
         background-color: #b0abd2; 
@@ -25,13 +36,73 @@
         background-color: #9d83fa;
     }
 
+    .popup .popuptext {
+        visibility: hidden;
+        width: 160px;
+        background-color: #555;
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 8px 0;
+        position: absolute;
+        
+    }
+
+    .popup .show {
+        visibility: visible;
+        }
+
 </style>
 
-<h1>New Article</h1>
-    <p>Title:</p>
-        <input id="title" width="300px" />
-    <p>Content:</p>
-        <input id="content" class="content-box"/>
+<div class="article_box" style="padding:20px;margin-top:50px;">
+    <h1>New Article</h1>
+        <p>Title:</p>
+            <input id="title" width="300px" />
+        <p>Content:</p>
+            <input id="content" class="content-box"/>
+</div>
 
-<button class="button"b  onclick="post()">Post</button>
+<!-- message that comes up after user attempts to post a new article -->
+<button class="button" onclick="post()">Post</button>
 
+<div class="popup">    
+    <span class="popuptext" id="success">You've successfully posted a new article!</span>
+    <span class="popuptext" id="fail">You are currently not allowed to post any articles!</span>
+</div>
+
+<script src="/static/js/libs/socket.io.min.js"></script>
+<script>
+    const socket = io();
+    //create new post
+    function post() {
+        console.log("works");
+        
+        let title = $("#title").val();
+        let content = $("#content").val();
+
+        socket.emit("new_post", title, content, (success) => {
+            console.log(success)
+            //successful post
+            
+            if (success) {
+                popup = document.getElementById("success");
+            }
+            else {
+                popup = document.getElementById("fail"); 
+            }
+
+            console.log(popup);
+
+            popup.classList.toggle("show");
+         });
+        
+
+        console.log(success);
+        
+    
+        
+    }
+
+</script>
+
+{% endblock %}

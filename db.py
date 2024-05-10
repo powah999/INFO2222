@@ -253,11 +253,15 @@ def create_article(username, title, content):
         user = get_user(username)
 
         #check if user is muted --> return "User is muted from creating posts"
-
-        #create article 
-        article = Article(user_id=user.id, title=title, content=content)
-        session.add(article)
-        session.commit()
+        if user.can_post:
+            article = Article(user_id=user.id, title=title, content=content)
+            session.add(article)
+            session.commit()
+            return True
+        
+        print("User is muted from posting!")
+        return False
+        
 
 def get_user_articles(username: str):
      with Session(engine) as session:

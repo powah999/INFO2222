@@ -141,7 +141,7 @@ def login_user():
                 session_ids[username] = None
 
                 #return url_for('home', username=username, friends=db.get_friends(username), received=db.get_received(username), pending=db.get_sent(username))
-                return url_for('articles')
+                return url_for('new_article')
         else:
             return "pass"
     
@@ -273,5 +273,10 @@ def navbar():
 
     return render_template("navbar.jinja", articles=articles)
 
+@app.route("/newarticle")
+def new_article():
+
+    return render_template("newarticle.jinja")
+
 if __name__ == '__main__':
-    socketio.run(app, host="localhost", port=5000 ,debug=True, ssl_context=('localhost.crt', 'localhost.key'))
+    socketio.run(app, host="localhost", port=5000 ,debug=False, ssl_context=('localhost.crt', 'localhost.key'))
