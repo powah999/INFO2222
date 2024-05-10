@@ -7,16 +7,16 @@
 {% block content %}
 <style>
     nav {
-        border-bottom: 1px solid black;
-        overflow: auto
+        overflow: auto;
     }
 
     #message_box {
         border: 1px solid black;
         height: 400px;
-        width: 800px;
+        width: 100%;
         overflow: auto;
         padding: 2px;
+        clear: both;
     }
 
     .text {
@@ -24,65 +24,101 @@
         margin-bottom: 2px;
     }
 
-    .requests {
-        float: left;
-        margin-bottom: 5px;
+    .status-indicator {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-left: 6px;
+        margin-right: 6px;
+        vertical-align: middle;
     }
 
-    .received {
+    .online {
+        background-color: green;
+    }
+
+    .offline {
+        background-color: red;
+    }
+
+    .friends-list {
+        float: left;
+        width: 25%;
+        list-style-type: none;
+        padding: 0;
+    }
+
+    .requests-list {
+        float: right;
+        width: 25%;
+        list-style-type: none;
+        padding: 0;
+    }
+
+    .requests-list h2,
+    .friends-list h2 {
+        margin-top: 0;
+    }
+
+    .requests-list li,
+    .friends-list li {
+        display: block;
         margin-bottom: 10px;
+        list-style-type: none;
+    }
+
+    .requests-list div,
+    .friends-list div {
+        border-bottom: none;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 10px;
+    }
+
+    .requests-list span,
+    .friends-list span {
+        text-decoration: none;
+    }
+
+    #main-container {
+        overflow: auto;
+        clear: both;
     }
 </style>
 
-<!--Navbar, you'll see the username here-->
+<!--Navbar-->
 <nav style="border-bottom: 1px solid black;">
     <ol style="float: right">
         <li style="display:inline-block">Username: {{ username | escape }} </li>
     </ol>
 </nav>
 
-<!-- Display friends list upon successful login-->
-<div style="border-bottom: 1px solid black;">
-    <ul id="friend_list" style="float: left">
+<!-- Container for friend lists -->
+<div id="main-container">
+    <!-- Friends List -->
+    <ul id="friend_list" class="friends-list">
         <h2>My friends:</h2>
         {% if friends != [] and friends is not none and friends != -1 %}
         {% for friend in friends %}
-        <li style="display:inline-block">
+        <li>
             <div class="{{ friend.username | escape }}">
-                <span>{{ friend.username | escape}}</span>
-                <button onclick="join_room( '{{ friend.username | escape }}' )">Chat</button>
+                <span>{{ friend.username | escape }}</span>
+                <div id="{{ friend.username | escape }}-status"
+                    class="status-indicator {{ friend_status.get(friend.username, 'offline') }}"></div>
+                <button onclick="join_room('{{ friend.username | escape }}')">Chat</button>
             </div>
         </li>
         {% endfor %}
-        {% else %}
-
         {% endif %}
     </ul>
-</div>
 
-<div>
-    <ul id="pending_requests" style="float: right">
-        <h2>Pending friend requests:</h2>
-        {% if pending != [] and pending is not none and pending != -1 %}
-        {% for request in pending %}
-        <li style="display:inline-block">
-            <div class="{{ request.receiver | escape }}">
-                {{ request.receiver | escape }}
-            </div>
-        </li>
-        {% endfor %}
-        {% else %}
-
-        {% endif %}
-    </ul>
-</div>
-
-<div>
-    <ul id="received_requests" style="float: right">
+    <!-- Received Friend Requests -->
+    <ul id="received_requests" class="requests-list">
         <h2>Received friend requests:</h2>
         {% if received != [] and received is not none and received != -1 %}
         {% for request in received %}
-        <li style="display:inline-block">
+        <li>
             <div class="{{ request.sender | escape }}">
                 <span>{{ request.sender | escape }}</span>
                 <button onclick="accept('{{ request.sender | escape }}')">Accept</button>
@@ -90,25 +126,32 @@
             </div>
         </li>
         {% endfor %}
-        {% else %}
+        {% endif %}
+    </ul>
 
+    <!-- Pending Friend Requests -->
+    <ul id="pending_requests" class="requests-list" style="margin-top: 20px;">
+        <h2>Pending friend requests:</h2>
+        {% if pending != [] and pending is not none and pending != -1 %}
+        {% for request in pending %}
+        <li>
+            <div class="{{ request.receiver | escape }}">
+                {{ request.receiver | escape }}
+            </div>
+        </li>
+        {% endfor %}
         {% endif %}
     </ul>
 </div>
-
 
 <main>
     <!-- The messages are displayed here -->
     <section id="message_box"></section>
 
-
-    <!-- These part ideally should be a form element, 
-    but I wrote this code a year ago and I don't want to break anything...-->
+    <!-- Chat box, friend requests box, and input box -->
     <section id="chat_box" style="display: none">
         <p class="text">Chat with: </p>
         <input id="receiver" placeholder="username">
-        <!-- MDN says its bad practice to use the onclick attribute,
-        but we're using it anyways coz its easy :)-->
         <button onclick="join_room()">Chat</button>
     </section>
 
@@ -118,15 +161,12 @@
         <button onclick="send_friend_request()">Send request</button>
     </section>
 
-    <!-- The (message) input box is set to display: none initially, 
-    this means the input box is "invisible" initially-->
     <section id="input_box" style="display: none">
         <p class="text">Message: </p>
         <input id="message" placeholder="message">
         <button onclick="send()">Send</button>
         <button onclick="leave()">Leave Room</button>
     </section>
-
 </main>
 
 <script src="/static/js/libs/socket.io.min.js"></script>
@@ -256,6 +296,13 @@
             add_message(('Server: ' + msg), color);
         }
     })
+
+    socket.on('status_update', (data) => {
+        const statusElement = document.getElementById(`${data.username}-status`);
+        if (statusElement) {
+            statusElement.className = `status-indicator ${data.status}`;
+        }
+    });
 
 
     // we'll send the message to the server by emitting a "send" event
@@ -457,34 +504,46 @@
     }
 
     function displayFriend(fri) {
-
         let friend = htmlEncode(fri);
 
+        // Get the friend list container
         var ul = document.getElementById("friend_list");
 
-        //li
+        // Create a list item with the same class specified in the CSS
         var li = document.createElement("li");
-        li.style.display = "inline-block";
+        li.className = "friends-list-item";  // Assign the existing class name
 
-        //div
+        // Create a div for each friend using the specified class
         var div = document.createElement("div");
-        div.className = friend;
+        div.className = "friends-list-item";
 
-        //span
+        // Create a span for the friend's name with the proper style
         var span = document.createElement("span");
-        span.textContent = htmlEncode(friend);
+        span.textContent = friend;
 
-        //chat button
-        var chatBtn = document.createElement("button");
-        chatBtn.textContent = "Chat";
-        chatBtn.onclick = function () {
-            join_room(friend);
-        };
+        // Emit a request to get the friend's status
+        socket.emit("get_status", friend, (status) => {
+            // Create a div for the status indicator with the correct style
+            var statusIndicator = document.createElement("div");
+            statusIndicator.id = `${friend}-status`;
+            statusIndicator.className = `status-indicator ${status}`;  // Assign existing styles (online/offline)
 
-        div.appendChild(span);
-        div.appendChild(chatBtn);
-        li.appendChild(div);
-        ul.appendChild(li);
+            // Create a chat button using the same style
+            var chatBtn = document.createElement("button");
+            chatBtn.textContent = "Chat";
+            chatBtn.onclick = function () {
+                join_room(friend);
+            };
+
+            // Append all elements to the main div with the correct class
+            div.appendChild(span);
+            div.appendChild(statusIndicator);
+            div.appendChild(chatBtn);
+
+            // Append the div to the list item, then add it to the list container
+            li.appendChild(div);
+            ul.appendChild(li);
+        });
     }
 
     //Check for any incoming requests
