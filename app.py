@@ -141,7 +141,7 @@ def login_user():
                 session_ids[username] = None
 
                 #return url_for('home', username=username, friends=db.get_friends(username), received=db.get_received(username), pending=db.get_sent(username))
-                return url_for('new_article')
+                return url_for('articles')
         else:
             return "pass"
     
@@ -185,9 +185,13 @@ def signup_user():
                 print(f"account: {account}")
                 if account != "student":
                     staff_role = account
+                    
                     account = "staff"
                 else:
                     staff_role = "N/A"
+
+                print(f"staff_role")
+                print(f"account")
 
                 public_b = bleach.clean(data.get("public"))
                 print(f'string_b: {string_b}')

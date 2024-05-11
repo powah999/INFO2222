@@ -23,6 +23,16 @@
     .button:hover {
         background-color: #9d83fa;
     }
+
+    .article {
+        box-shadow: rgba(50, 50, 93, 0.25) 0px 2px 5px -1px, rgba(0, 0, 0, 0.3) 0px 1px 3px -1px;
+        padding-left: 10px;
+    }
+
+    .article {
+        padding-top: 5px;
+        
+    }
     
 </style>
 
@@ -32,10 +42,15 @@
 
 {% if articles %}
     {% for article in articles %}
-    <div class="shadow p-3 mb-5 bg-body rounded">
-        <h2>{{ article.title }}</h2><br/>
-        <small>{{ article.date }} {{ article.author.username }} </small><br/><br/>
-        
+    <div class="article">
+        <h2 class="title">{{ article.title }}</h2>
+        {{ article.author.username }} <br/>
+        <small> <b>{{ article.author.account }}</b>
+        {% if article.author.account == 'staff' %}
+            {{ article.author.staff_role }}
+        {% endif %}
+        </small> <br/>
+        <small> {{ article.date }}  </small><br/><br/>
         {{ article.content }} <br/><br/>
     </div>
     {% endfor %}
