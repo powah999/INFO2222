@@ -305,19 +305,54 @@ def delete_article(username, article_id):
 
         print("Article doesn't exist")
         return False
-"""
+
 #edit your own article
-def update_article(username):
-    
+def update_article(username, article: Article, new_title=None, new_content=None):
+    with Session(engine) as session:
+        user = get_user(username=username)
 
-
+        if not user.can_post:
+            print("user is not allowed to post")
+            return False
+        
+        if article:
+            print(article)
+            if new_title:
+                article.title = new_title
+            if new_content:
+                article.content = new_content
+            article.date = DateTime.date.today()
+            print(article)
+            session.commit()
+        return True
 
 
 #edit others articles (only staff allowed)
-def edit_article():
+def edit_article(username, article: Article, new_title=None, new_content=None):
+    with Session(engine) as session:
+        user = get_user(username=username)
 
+        if not user.account == "staff" or not user.can_post:
+            print("only staff are allowed to edit other users' articles")
+            return False
+        
+        if article:
+            print(article)
+            if new_title:
+                article.title = new_title
+            if new_content:
+                article.content = new_content
+            article.date = DateTime.date.today()
+            print(article)
+            session.commit()
+       
+        return True
+
+
+"""
 #make comment on article
 def comment():
+
 
 #only staff allowed
 def delete_comment():
