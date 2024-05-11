@@ -33,6 +33,14 @@
         padding-top: 5px;
         
     }
+
+    .delete {
+
+    }
+
+    .edit {
+
+    }
     
 </style>
 
@@ -52,7 +60,19 @@
         </small> <br/>
         <small> {{ article.date }}  </small><br/><br/>
         {{ article.content }} <br/><br/>
+        
+        <div class="actions">
+            <!-- enable button if staff -->
+            {% if account == "staff" or (article.author.username == username and can_post) %}
+                <button class="delete" onclick="delete(article)"><i class="fa fa-trash"></i></button>
+                <button class="edit" onclick="edit(article)"><i class="fa fa-pencil"></i></button>
+            {% else %}
+                <button class="delete" type="button" disabled><i class="fa fa-trash"></i></button>
+                <button class="edit" type="button" disabled><i class="fa fa-pencil"></i></button>
+            {% endif %}
+        </div>
     </div>
+
     {% endfor %}
 {% else %} 
     No articles posted yet
@@ -64,6 +84,28 @@
     <button class="button" >New Article</button>
 </a>
 
+<script src="/static/js/libs/socket.io.min.js"></script>
+<script>
+    let articles = {{ articles }};
+    const socket = io();
+    function delete(article) {
+        socket.emit("delete_article", article, (success) => {
+            if (success) {
+                articles.pop
+            }
+        });
+
+        
+    }
+
+
+
+    function edit() {
+        socket.emit("edit_article", article, (success) => {
+
+        });
+    }
+</script>
 
 {% endblock %}
 
