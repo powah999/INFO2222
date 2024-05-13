@@ -253,11 +253,15 @@ def create_article(username, title, content):
         user = get_user(username)
 
         #check if user is muted --> return "User is muted from creating posts"
-
-        #create article 
-        article = Article(user_id=user.id, title=title, content=content)
-        session.add(article)
-        session.commit()
+        if user.can_post:
+            article = Article(user_id=user.id, title=title, content=content)
+            session.add(article)
+            session.commit()
+            return True
+        
+        print("User is muted from posting!")
+        return False
+        
 
 def get_user_articles(username: str):
      with Session(engine) as session:
@@ -284,7 +288,7 @@ def get_all_articles():
         return articles
 
 #only staff allowed    
-def delete_article(username, article_id):
+def delete_article(username, article):
     with Session(engine) as session:
         user = get_user(username=username)
         #check if staff
@@ -301,19 +305,34 @@ def delete_article(username, article_id):
 
         print("Article doesn't exist")
         return False
-"""
-#edit your own article
-def update_article(username):
+
+#edit article
+def edit_article(article: Article, new_title=None, new_content=None):
+    with Session(engine) as session:     
+        if article:
+            print("Before: ")
+            print(article)
+            
+            if new_title:
+                article.title = new_title
+            if new_content:
+                article.content = new_content
+            
+            article.date = DateTime.date.today()
+            
+            print("After: ")
+            print(article)
+            
+            session.commit()
+            return article
     
+        return False
 
 
-
-
-#edit others articles (only staff allowed)
-def edit_article():
-
+"""
 #make comment on article
 def comment():
+
 
 #only staff allowed
 def delete_comment():

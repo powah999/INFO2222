@@ -10,7 +10,7 @@ Prisma docs also looks so much better in comparison
 or use SQLite, if you're not into fancy ORMs (but be mindful of Injection attacks :) )
 '''
 
-from sqlalchemy import String, ForeignKey, Integer, Text, UniqueConstraint, DateTime, CheckConstraint
+from sqlalchemy import String, ForeignKey, Integer, Text, UniqueConstraint, DateTime, CheckConstraint, Boolean
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from typing import Dict, List
 import datetime
@@ -28,7 +28,6 @@ def mydefault(context):
 class User(Base):
     __tablename__ = "user"
     
-    
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     username: Mapped[str] = mapped_column(String, unique=True)
     password: Mapped[str] = mapped_column(String)
@@ -40,6 +39,10 @@ class User(Base):
 
     STAFF_ROLES = ('N/A', 'academic', 'administrative staff', 'admin user')
     staff_role: Mapped[str] = mapped_column(String, default='N/A')
+
+    #current user permission to post articles / message people
+    can_post: Mapped[bool] = mapped_column(Boolean, default=True)
+    can_message: Mapped[bool] = mapped_column(Boolean, default=True)
 
     friends: Mapped[List["Friend"]] = relationship('Friend', secondary='link')
     

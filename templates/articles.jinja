@@ -23,8 +23,46 @@
     .button:hover {
         background-color: #9d83fa;
     }
+
+    .article {
+        box-shadow: rgba(50, 50, 93, 0.25) 0px 2px 5px -1px, rgba(0, 0, 0, 0.3) 0px 1px 3px -1px;
+        padding-left: 10px;
+    }
+
+    .article {
+        padding-top: 5px;
+        
+    }
     
+    .popup .article_box {
+        visibility: hidden;
+        width: 160px;
+        background-color: #b0abd2;
+        text-align: center;
+        border-radius: 6px;
+        padding: 8px 0;
+        position: absolute;
+        }
+    
+    .popup {
+        position: relative;
+        display: inline-block;
+        cursor: pointer;
+        margin-top: 30px;
+    }
+
+    .popup .show {
+        visibility: visible;
+    }
+
+    .content-box {
+        width: 300px;
+        height: 50px;
+    }
+
 </style>
+
+
 
 <div style="padding:20px;margin-top:30px;">
 <h1>Articles</h1>
@@ -32,12 +70,29 @@
 
 {% if articles %}
     {% for article in articles %}
-    <div class="shadow p-3 mb-5 bg-body rounded">
-        <h2>{{ article.title }}</h2><br/>
-        <small>{{ article.date }} {{ article.author.username }} </small><br/><br/>
-        
+    <div class="article">
+        <h2 class="title">{{ article.title }}</h2>
+        {{ article.author.username }} <br/>
+        <small> <b>{{ article.author.account }}</b>
+        {% if article.author.account == 'staff' %}
+            {{ article.author.staff_role }}
+        {% endif %}
+        </small> <br/>
+        <small> {{ article.date }}  </small><br/><br/>
         {{ article.content }} <br/><br/>
+        
+        <div class="actions">
+            <!-- enable button if staff -->
+            {% if account == "staff" or (article.author.username == username and can_post) %}
+                <button class="delete" onclick="delete(article)"><i class="fa fa-trash"></i></button>
+                <button class="edit" onclick="edit(article)"><i class="fa fa-pencil"></i></button>
+            {% else %}
+                <button class="delete" type="button" disabled><i class="fa fa-trash"></i></button>
+                <button class="edit" type="button" disabled><i class="fa fa-pencil"></i></button>
+            {% endif %}
+        </div>
     </div>
+
     {% endfor %}
 {% else %} 
     No articles posted yet
@@ -45,20 +100,81 @@
 
 </div>
 
-<a href="#newarticle">
-    <button class="button">New Article</button>
+<div class="popup" id="popup">
+    <div class="article_box" id="article_box">
+        <h1>Edit Article</h1>
+            <p>Title:</p>
+                <input id="title" width="300px" />
+            <p>Content:</p>
+                <input id="content" class="content-box"/>
+    </div>
+
+    <button class="button" onclick="re_post(article)">Re-post</button>
+</div>
+
+<a href={{ url_for('new_article') }}>
+    <button class="button" >New Article</button>
 </a>
 
+<script src="/static/js/libs/socket.io.min.js"></script>
 <script>
+    let articles = {{ articles }};
+    const socket = io();
+    function delete(article) {
+        socket.emit("delete_article", article, (success) => {
+            if (success) {
+                //remove articles dynamically
+            }
+        });
 
-    function new_article() {
         
     }
 
+    //popup to edit post
+    function edit(article) {
+        let article = article;
+        popup = $("#article_box").val();
 
+        document.getElementById("title").value = article.title;
+        document.getElementById("content").value = article.content;
 
+        popup.classList.toggle("show");
+    }
+
+    //update post
+    function re_post(article) {
+        console.log("works");
+        
+        let title = $("#title").val();
+        let content = $("#content").val();
+
+        socket.emit("re_post", article, title, content, (success) => {
+            console.log(success)
+            //successful post
+            
+            if (success) {
+                //upate list dynamically
+                index = articles.findIndex(obj => obj.id == success.id);
+                articles[index] = success;
+                console.log("New:" articles[index]);
+                popup = document.getElementById("success");
+            }
+            else {
+                popup = document.getElementById("fail"); 
+            }
+
+            console.log(popup);
+
+            popup.classList.toggle("show");
+         });
+        
+
+        console.log(success);
+        
+    
+        
+    }
 </script>
-
 
 {% endblock %}
 

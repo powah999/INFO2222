@@ -185,9 +185,13 @@ def signup_user():
                 print(f"account: {account}")
                 if account != "student":
                     staff_role = account
+                    
                     account = "staff"
                 else:
                     staff_role = "N/A"
+
+                print(f"staff_role")
+                print(f"account")
 
                 public_b = bleach.clean(data.get("public"))
                 print(f'string_b: {string_b}')
@@ -282,5 +286,10 @@ def navbar():
 
     return render_template("navbar.jinja", articles=articles)
 
+@app.route("/newarticle")
+def new_article():
+
+    return render_template("newarticle.jinja")
+
 if __name__ == '__main__':
-    socketio.run(app, host="localhost", port=5000 ,debug=True, ssl_context=('localhost.crt', 'localhost.key'))
+    socketio.run(app, host="localhost", port=5000 ,debug=False, ssl_context=('localhost.crt', 'localhost.key'))
