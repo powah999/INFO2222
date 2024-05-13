@@ -143,7 +143,7 @@ def login_user():
                 session_ids[username] = None
 
                 #return url_for('home', username=username, friends=db.get_friends(username), received=db.get_received(username), pending=db.get_sent(username))
-                return url_for('articles')
+                return url_for('articles', username=username)
         else:
             return "pass"
     
@@ -221,7 +221,8 @@ def signup_user():
                 session['username'] = username
                 session_ids[username] = None
 
-                return url_for('home', username=username, friends=db.get_friends(username), received=db.get_received(username), pending=db.get_sent(username))
+                #return url_for('home', username=username, friends=db.get_friends(username), received=db.get_received(username), pending=db.get_sent(username))
+                return url_for('articles', username=username)
             else:
                 return 'pass'
         else:
@@ -279,9 +280,11 @@ def home():
 @app.route("/articles")
 def articles():
     articles = db.get_all_articles()
-    files = os.listdir(app.config['UPLOAD_PATH'])
+    #username= session["username"]
 
-    return render_template("articles.jinja", articles=articles, files=files)
+   # account = db.get_user(username).account
+
+    return render_template("articles.jinja", articles=articles, username='a', account='student', can_post=True)
 
 @app.route("/navbar")
 def navbar():
@@ -294,6 +297,7 @@ def new_article():
 
     return render_template("newarticle.jinja")
 
+'''
 @app.route("/upload", methods=["POST"])
 def upload_file():
     title = request.form.get('title')
@@ -319,6 +323,7 @@ def upload_file():
 def upload(filename):
     return send_from_directory(app.config['UPLOAD_PATH'], filename)
 
+'''
 
 if __name__ == '__main__': 
     socketio.run(app, host="localhost", port=5000 ,debug=False, ssl_context=('localhost.crt', 'localhost.key'))

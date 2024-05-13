@@ -79,22 +79,17 @@
         {% endif %}
         </small> <br/>
         <small> {{ article.date }}  </small><br/><br/>
-        {{ article.content }} <br/>
-        {% if article.file_name != '' %}
-           <a href={{ article.filename }} ></a>
+        {{ article.content }} <br/><br/>
+        <!-- enable button if staff -->
+        {% if account == "staff" or (article.author.username == username and can_post) %}
+            <button onclick="delete({{ article }})">Delete</button>
+            <button onclick="edit({{ article }})">Edit</button>
+            <button onclick="comment({{ article }})">Comment</button>
+        {% else %}
+            <button type="button" disabled>Delete</button>
+            <button type="button" disabled>Edit</button>
+            <button onclick="comment(article)">Comment</button>
         {% endif %}
-        <br/>
-        
-        <div class="actions">
-            <!-- enable button if staff -->
-            {% if account == "staff" or (article.author.username == username and can_post) %}
-                <button class="delete" onclick="delete(article)"><i class="fa fa-trash"></i></button>
-                <button class="edit" onclick="edit(article)"><i class="fa fa-pencil"></i></button>
-            {% else %}
-                <button class="delete" type="button" disabled><i class="fa fa-trash"></i></button>
-                <button class="edit" type="button" disabled><i class="fa fa-pencil"></i></button>
-            {% endif %}
-        </div>
     </div>
 
     {% endfor %}
@@ -111,8 +106,6 @@
                 <input id="title" width="300px" />
             <p>Content:</p>
                 <input id="content" class="content-box"/>
-            <p>Upload file:</p>
-            <input id="file" class="file" type="file"/>
     </div>
 
     <button class="button" onclick="re_post(article)">Re-post</button>
@@ -124,9 +117,6 @@
 
 <script src="/static/js/libs/socket.io.min.js"></script>
 <script>
-    let articles = document.querySelectorAll("#received_requests li");
-    console.log(articles);
-
     const socket = io();
     function delete(article) {
         socket.emit("delete_article", article, (success) => {
@@ -140,7 +130,6 @@
 
     //popup to edit post
     function edit(article) {
-        let article = article;
         popup = $("#article_box").val();
 
         document.getElementById("title").value = article.title;
