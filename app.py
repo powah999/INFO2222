@@ -257,7 +257,16 @@ def home():
         else:
             friend_status[friend.username] = 'online'
 
-    return render_template("home.jinja", username=username, friends=friends, received=db.get_received(username), pending=db.get_sent(username), friend_status=friend_status)
+    friend_roles = {}
+    for friend in friends:
+        friend_info = db.get_user(friend.username)
+        account = friend_info.account
+        if account == "staff":
+            friend_roles[friend.username] = friend_info.staff_role
+        else:
+            friend_roles[friend.username] = account
+
+    return render_template("home.jinja", username=username, friends=friends, received=db.get_received(username), pending=db.get_sent(username), friend_status=friend_status, friend_roles=friend_roles)
 
 
 #page containing all posts/knowledge repository

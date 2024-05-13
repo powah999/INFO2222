@@ -102,6 +102,9 @@
         {% if friends != [] and friends is not none and friends != -1 %}
         {% for friend in friends %}
         <li>
+            <div id="{{ friend.username | escape}}-role">
+                <span>role: {{friend_roles[friend.username]}}</span>
+            </div>
             <div class="{{ friend.username | escape }}">
                 <span>{{ friend.username | escape }}</span>
                 <div id="{{ friend.username | escape }}-status"
