@@ -248,13 +248,13 @@ def get_user(username: str):
 
 
 #create post
-def create_article(username, title, content):
+def create_article(username, title, content, file_name):
     with Session(engine) as session:
         user = get_user(username)
 
         #check if user is muted --> return "User is muted from creating posts"
         if user.can_post:
-            article = Article(user_id=user.id, title=title, content=content)
+            article = Article(user_id=user.id, title=title, content=content, file_name=file_name)
             session.add(article)
             session.commit()
             return True

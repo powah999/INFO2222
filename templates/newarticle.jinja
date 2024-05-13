@@ -54,13 +54,23 @@
 
 </style>
 
+
 <div class="article_box" style="padding:20px;margin-top:50px;">
     <h1>New Article</h1>
+    
+    <form action="/upload" method="post" enctype="multipart/form-data">
         <p>Title:</p>
-            <input id="title" width="300px" />
+            <input id="title" name="title" type="text" width="300px" />
         <p>Content:</p>
-            <input id="content" class="content-box"/>
+            <input id="content" name="content" type="text" class="content-box"/>
+        <p>Upload file:</p>
+            <input id="file" name="file" type="file" class="file"/>
+
+        <button id="button" class="button" type="submit">Post</button>
+    </form>
+
 </div>
+
 
 <!-- message that comes up after user attempts to post a new article -->
 <button class="button" onclick="post()">Post</button>

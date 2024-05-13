@@ -4,7 +4,7 @@ this is where you'll find all of the get/post request handlers
 the socket event handlers are inside of socket_routes.py
 '''
 
-from flask import Flask, render_template, request, abort, url_for, session, redirect, jsonify
+from flask import Flask, render_template, request, abort, url_for, session, redirect, send_from_directory
 from flask_socketio import SocketIO
 import db
 import secrets
@@ -12,6 +12,7 @@ from string import ascii_letters, digits, punctuation
 import bcrypt
 import datetime
 import bleach
+import os
 from flask_session import Session
 
 # import logging
@@ -32,6 +33,7 @@ app.config.update(
 # secret key used to sign the session cookie
 app.config['SECRET_KEY'] = secrets.token_hex()
 app.config['SESSION_TYPE'] = 'filesystem'
+app.config['UPLOAD_PATH'] = 'uploads'
 socketio = SocketIO(app)
 
 
@@ -277,8 +279,9 @@ def home():
 @app.route("/articles")
 def articles():
     articles = db.get_all_articles()
+    files = os.listdir(app.config['UPLOAD_PATH'])
 
-    return render_template("articles.jinja", articles=articles)
+    return render_template("articles.jinja", articles=articles, files=files)
 
 @app.route("/navbar")
 def navbar():
@@ -291,5 +294,31 @@ def new_article():
 
     return render_template("newarticle.jinja")
 
-if __name__ == '__main__':
+@app.route("/upload", methods=["POST"])
+def upload_file():
+    title = request.form.get('title')
+    content = request.form.get('content')
+    file = request.files.get('file')
+
+    if not title or not content:
+        return redirect(url_for('new_articles'))
+    
+    if file and file.filename != '':
+        file.save(os.path.join(app.config['UPLOAD_PATH'], file.filename))
+        file_name = os.path.join(app.config['UPLOAD_PATH'], file.filename)
+    else:
+        file_name = ''
+   
+    if not db.create_article(username=session["username"], title=title, content=content, file_name=file_name):
+        return redirect(url_for('new_article'))
+    
+    return redirect(url_for('articles'))
+
+
+@app.route('/uploads/<filename>')
+def upload(filename):
+    return send_from_directory(app.config['UPLOAD_PATH'], filename)
+
+
+if __name__ == '__main__': 
     socketio.run(app, host="localhost", port=5000 ,debug=False, ssl_context=('localhost.crt', 'localhost.key'))
