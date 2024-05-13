@@ -33,16 +33,36 @@
         padding-top: 5px;
         
     }
-
-    .delete {
-
-    }
-
-    .edit {
-
-    }
     
+    .popup .article_box {
+        visibility: hidden;
+        width: 160px;
+        background-color: #b0abd2;
+        text-align: center;
+        border-radius: 6px;
+        padding: 8px 0;
+        position: absolute;
+        }
+    
+    .popup {
+        position: relative;
+        display: inline-block;
+        cursor: pointer;
+        margin-top: 30px;
+    }
+
+    .popup .show {
+        visibility: visible;
+    }
+
+    .content-box {
+        width: 300px;
+        height: 50px;
+    }
+
 </style>
+
+
 
 <div style="padding:20px;margin-top:30px;">
 <h1>Articles</h1>
@@ -80,6 +100,18 @@
 
 </div>
 
+<div class="popup" id="popup">
+    <div class="article_box" id="article_box">
+        <h1>Edit Article</h1>
+            <p>Title:</p>
+                <input id="title" width="300px" />
+            <p>Content:</p>
+                <input id="content" class="content-box"/>
+    </div>
+
+    <button class="button" onclick="re_post(article)">Re-post</button>
+</div>
+
 <a href={{ url_for('new_article') }}>
     <button class="button" >New Article</button>
 </a>
@@ -91,19 +123,56 @@
     function delete(article) {
         socket.emit("delete_article", article, (success) => {
             if (success) {
-                articles.pop
+                //remove articles dynamically
             }
         });
 
         
     }
 
+    //popup to edit post
+    function edit(article) {
+        let article = article;
+        popup = $("#article_box").val();
 
+        document.getElementById("title").value = article.title;
+        document.getElementById("content").value = article.content;
 
-    function edit() {
-        socket.emit("edit_article", article, (success) => {
+        popup.classList.toggle("show");
+    }
 
-        });
+    //update post
+    function re_post(article) {
+        console.log("works");
+        
+        let title = $("#title").val();
+        let content = $("#content").val();
+
+        socket.emit("re_post", article, title, content, (success) => {
+            console.log(success)
+            //successful post
+            
+            if (success) {
+                //upate list dynamically
+                index = articles.findIndex(obj => obj.id == success.id);
+                articles[index] = success;
+                console.log("New:" articles[index]);
+                popup = document.getElementById("success");
+            }
+            else {
+                popup = document.getElementById("fail"); 
+            }
+
+            console.log(popup);
+
+            popup.classList.toggle("show");
+         });
+        
+
+        console.log(success);
+        
+    
+        
     }
 </script>
 

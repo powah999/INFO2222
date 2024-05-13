@@ -400,13 +400,9 @@ def delete_article(article):
     
     return True
 
-@socketio.on("edit_article")
-def edit_article(article, new_title, new_content):
-    if not db.edit_article(username=session["username"], article=article, new_title=new_title, new_content=new_content):
-        return False
-    
-    return True
-
+@socketio.on("re_post")
+def re_post(article, new_title, new_content):
+    return db.edit_article(article=article, new_title=new_title, new_content=new_content)
 
 # when the client connects to a socket
 # this event is emitted when the io() function is called in JS

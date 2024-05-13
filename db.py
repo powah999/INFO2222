@@ -307,19 +307,24 @@ def delete_article(username, article):
         return False
 
 #edit article
-def edit_article(username, article: Article, new_title=None, new_content=None):
-    with Session(engine) as session:
-        
+def edit_article(article: Article, new_title=None, new_content=None):
+    with Session(engine) as session:     
         if article:
+            print("Before: ")
             print(article)
+            
             if new_title:
                 article.title = new_title
             if new_content:
                 article.content = new_content
+            
             article.date = DateTime.date.today()
+            
+            print("After: ")
             print(article)
+            
             session.commit()
-            return True
+            return article
     
         return False
 
