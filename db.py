@@ -9,6 +9,7 @@ from models import *
 import json
 
 from pathlib import Path
+from datetime import datetime 
 
 # creates the database directory
 Path("database") \
@@ -314,13 +315,13 @@ def edit_article(article_id, new_title=None, new_content=None):
             if new_content:
                 article.content = new_content
             
-            article.date = DateTime.date.today()
+            article.date = datetime.today()
             
             print("After: ")
             print(article)
             
             session.commit()
-            return article
+            return datetime.today().strftime("%Y-%m-%d %H:%M:%S")
     
         return False
 

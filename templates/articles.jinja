@@ -76,6 +76,10 @@
         visibility: visible;
     }
 
+    .popup .hide {
+        visibility: hidden;
+    }
+
     .content-box {
         width: 500px;
         height: 200px; 
@@ -91,21 +95,21 @@
 {% if articles %}
     {% for article in articles %}
     <li id="article" class="article">
-        <h2 class="title">{{ article.title }}</h2>
+        <h2 class="title" id="article_title">{{ article.title }}</h2>
         {{ article.author.username }} <br/>
         <small> <b>{{ article.author.account }}</b>
         {% if article.author.account == 'staff' %}
             {{ article.author.staff_role }}
         {% endif %}
         </small> <br/>
-        <small> {{ article.date }}  </small><br/><br/>
-        {{ article.content }} <br/><br/>
+        <p style="font-size: small" id="article_date"> {{ article.date }} </p>
+        <p id="article_content" >{{ article.content }}</p> <br/>
         <!-- enable button if staff -->
         {% if account == "staff" %}
             <button class="delete" onclick="remove('{{ article.id }}')">Delete</button>
-            <button class="edit" onclick="edit('{{ article.id }}', '{{ article.title }}', '{{ article.content }}')">Edit</button>
+            <button class="edit" id="edit" onclick="edit(this, '{{ article.title }}', '{{ article.content }}', '{{ article.id }}')">Edit</button>
         {% elif article.author.username == username and can_post %}
-            <button class="edit" onclick="edit('{{ article.id }}', '{{ article.title }}', '{{ article.content }}')">Edit</button>   
+            <button class="edit" id ="edit" onclick="edit(this, '{{ article.title }}', '{{ article.content }}', '{{ article.id }}')">Edit</button>   
         {% endif %}
         <button class="comment" onclick="comment('{{ article.id }}')">Comment</button>
     </li>
@@ -128,7 +132,7 @@
             <br/>
             <br/>
             <br/>
-            <button class="re_post" id= "re_post" onclick="re_post()">Re-post</button>
+            <button class="re_post" id="re_post">Re-post</button>
             
     </div>
     
@@ -138,9 +142,9 @@
     <button class="button" >New Article</button>
 </a>
 
+
 <script src="/static/js/libs/socket.io.min.js"></script>
 <script>
-    let articles = {{ articles }};
     const socket = io();
     // Add event listeners to the delete buttons
     var deleteButtons = document.getElementsByClassName('delete');
@@ -152,6 +156,8 @@
 
         });
     }
+
+   
 
     // Function to remove an item from the list
     function removeListItem(item) {
@@ -171,51 +177,70 @@
 
 
     //popup to edit post
-    function edit(title, content, id) {
+    function edit(liElem, old_title, old_content, id) {
         popup = document.getElementById('article_box');
 
-        document.getElementById("title").value = title
-        document.getElementById("content").value = content;
+        document.getElementById("title").value = old_title;
+        document.getElementById("content").value = old_content;
 
         popup.classList.toggle("show");
 
         var repost_button = document.getElementById('re_post');
-        repost_button.addEventListener('click', re_post(id, title, content));
+        repost_button.onclick = function () {
+            re_post(liElem, old_title, old_content, id);
+        };
     }
 
-
-
     //update post
-    function re_post(id, title, content) {
-        console.log("works");
+    function re_post(liElem, old_title, old_content, id) {
+        let title = document.getElementById("title").value;
+        let content = document.getElementById("content").value;
+
+        console.log(old_title);
+        console.log(title);
+        console.log(old_content);
+        console.log(content);
+        console.log(id);
 
         socket.emit("re_post", id, title, content, (success) => {
             console.log(success)
             //successful post
             
-            if (success) {
-                //upate list dynamically
-                index = articles.findIndex(obj => obj.id == id);
-                articles[index] = success;
-                console.log("New:" + articles[index]);
-                //popup = document.getElementById("success");
+            if (typeof success == "string") {
+                //update list dynamically
+                var article = liElem.parentNode;
+                var new_article = article.cloneNode(true);
+                
+                var date = new_article.querySelector("#article_date");
+                console.log(date);
+                date.textContent = success;
+                
+                var old_title = new_article.querySelector("#article_title");
+                old_title.textContent = title;
+                
+                var old_content = new_article.querySelector("#article_content");  
+                old_content.textContent = content;
+
+                var parent = article.parentNode;
+                parent.replaceChild(new_article, article);
+
+                popup = document.getElementById('article_box');
+                popup.classList.toggle("hide");
+                
             }
             else {
-                alert(success);
-                //popup = document.getElementById("fail"); 
+                alert("Could not update article");
+               
             }
 
             //console.log(popup);
 
            // popup.classList.toggle("show");
          });
-        
-
-        console.log(success);
-        
     
         
     }
+
 </script>
 
 {% endblock %}

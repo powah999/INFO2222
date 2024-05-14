@@ -408,11 +408,7 @@ def delete_article(article_id):
 
 @socketio.on("re_post")
 def re_post(id, new_title, new_content):
-    updated = db.edit_article(article_id=id, new_title=new_title, new_content=new_content)
-    if not updated:
-        return "Could not edit article"
-
-    return updated
+    return db.edit_article(article_id=id, new_title=new_title, new_content=new_content)
 
 # when the client connects to a socket
 # this event is emitted when the io() function is called in JS
