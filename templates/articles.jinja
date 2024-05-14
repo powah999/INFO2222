@@ -33,22 +33,43 @@
         padding-top: 5px;
         
     }
+
+    .article_box {
+        position: relative;
+    }
     
     .popup .article_box {
         visibility: hidden;
-        width: 160px;
-        background-color: #b0abd2;
-        text-align: center;
-        border-radius: 6px;
-        padding: 8px 0;
         position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: #b7b7b7;
+        padding: 20px;
         }
     
+    .re_post {
+        background-color: #b0abd2; 
+        border: none;
+        color: #1b1b1b;
+        padding: 12px;
+        text-align: center;
+        text-decoration: none;
+        font-size: 14px;
+        margin: 4px 2px;
+        cursor: pointer;
+        position: absolute;
+        bottom: 5px;
+        right: 20px;
+        }
+
+    .re_post:hover {
+        background-color: #9d83fa;
+    }
+        
     .popup {
-        position: relative;
         display: inline-block;
         cursor: pointer;
-        margin-top: 30px;
     }
 
     .popup .show {
@@ -56,8 +77,8 @@
     }
 
     .content-box {
-        width: 300px;
-        height: 50px; 
+        width: 500px;
+        height: 200px; 
     }
 
 </style>
@@ -80,17 +101,14 @@
         <small> {{ article.date }}  </small><br/><br/>
         {{ article.content }} <br/><br/>
         <!-- enable button if staff -->
-        {% if account == "staff" or (article.author.username == username and can_post) %}
-            <button class="delete" onclick="delete('{{ article.id }}')">Delete</button>
-            <button onclick="edit('{{ article.id }}')">Edit</button>
-            <button onclick="comment('{{ article.id }}')">Comment</button>
-        {% else %}
-            <button type="button" disabled>Delete</button>
-            <button type="button" disabled>Edit</button>
-            <button onclick="comment('{{ article.id }}')">Comment</button>
+        {% if account == "staff" %}
+            <button class="delete" onclick="remove('{{ article.id }}')">Delete</button>
+            <button class="edit" onclick="edit('{{ article.id }}', '{{ article.title }}', '{{ article.content }}')">Edit</button>
+        {% elif article.author.username == username and can_post %}
+            <button class="edit" onclick="edit('{{ article.id }}', '{{ article.title }}', '{{ article.content }}')">Edit</button>   
         {% endif %}
+        <button class="comment" onclick="comment('{{ article.id }}')">Comment</button>
     </li>
-
     {% endfor %}
 {% else %}
 <li>
@@ -104,12 +122,16 @@
     <div class="article_box" id="article_box">
         <h1>Edit Article</h1>
             <p>Title:</p>
-                <input id="title" width="300px" />
+                <input id="title" width="500px" />
             <p>Content:</p>
                 <input id="content" class="content-box"/>
+            <br/>
+            <br/>
+            <br/>
+            <button class="re_post" id= "re_post" onclick="re_post()">Re-post</button>
+            
     </div>
-
-    <button class="button" onclick="re_post(article)">Re-post</button>
+    
 </div>
 
 <a href={{ url_for('new_article') }}>
@@ -118,14 +140,16 @@
 
 <script src="/static/js/libs/socket.io.min.js"></script>
 <script>
-
+    let articles = {{ articles }};
     const socket = io();
     // Add event listeners to the delete buttons
     var deleteButtons = document.getElementsByClassName('delete');
     for (var i = 0; i < deleteButtons.length; i++) {
         deleteButtons[i].addEventListener('click', function(event) {
             var article = event.target.parentNode; // The 'li' element to remove
+
             removeListItem(article);
+
         });
     }
 
@@ -137,70 +161,53 @@
     }
 
 
-    function delete(article_id) {
+    function remove(article_id) {
         socket.emit("delete_article", article_id, (success) => {
             if (typeof success == "string") {
                 alert(success);
             }
-        });
-
-        
+        }); 
     }
 
-    function delete_article(article_id) {
-        let liElements = document.querySelectorAll("#articles li");
-        // Loop through each <li> element
-        liElements.forEach(function (li) {
-            // Find the <div> element inside the <li>
-
-            var div = li.querySelector("." + senderName);
-            console.log(div)
-            if (div) {
-                // Remove the <div> element from its parent node (the <li>)
-                div.parentNode.removeChild(div);
-                console.log("removed")
-            }
-        });
-    }
-
-    
-    
 
     //popup to edit post
-    function edit(article) {
-        popup = $("#article_box").val();
+    function edit(title, content, id) {
+        popup = document.getElementById('article_box');
 
-        document.getElementById("title").value = article.title;
-        document.getElementById("content").value = article.content;
+        document.getElementById("title").value = title
+        document.getElementById("content").value = content;
 
         popup.classList.toggle("show");
+
+        var repost_button = document.getElementById('re_post');
+        repost_button.addEventListener('click', re_post(id, title, content));
     }
 
-    //update post
-    function re_post(article) {
-        console.log("works");
-        
-        let title = $("#title").val();
-        let content = $("#content").val();
 
-        socket.emit("re_post", article, title, content, (success) => {
+
+    //update post
+    function re_post(id, title, content) {
+        console.log("works");
+
+        socket.emit("re_post", id, title, content, (success) => {
             console.log(success)
             //successful post
             
             if (success) {
                 //upate list dynamically
-                index = articles.findIndex(obj => obj.id == success.id);
+                index = articles.findIndex(obj => obj.id == id);
                 articles[index] = success;
-                console.log("New:" articles[index]);
-                popup = document.getElementById("success");
+                console.log("New:" + articles[index]);
+                //popup = document.getElementById("success");
             }
             else {
-                popup = document.getElementById("fail"); 
+                alert(success);
+                //popup = document.getElementById("fail"); 
             }
 
-            console.log(popup);
+            //console.log(popup);
 
-            popup.classList.toggle("show");
+           // popup.classList.toggle("show");
          });
         
 

@@ -301,8 +301,10 @@ def delete_article(article_id):
         return False
 
 #edit article
-def edit_article(article: Article, new_title=None, new_content=None):
-    with Session(engine) as session:     
+def edit_article(article_id, new_title=None, new_content=None):
+    with Session(engine) as session:  
+        article = session.query(Article).filter_by(id=article_id).first()
+   
         if article:
             print("Before: ")
             print(article)
