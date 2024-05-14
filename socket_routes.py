@@ -410,6 +410,14 @@ def delete_article(article_id):
 def re_post(id, new_title, new_content):
     return db.edit_article(article_id=id, new_title=new_title, new_content=new_content)
 
+
+@socketio.on("comment")
+def comment(username, article_id, content):
+    return db.add_comment(article_id=article_id, username=username, content=content)
+
+
+
+
 # when the client connects to a socket
 # this event is emitted when the io() function is called in JS
 

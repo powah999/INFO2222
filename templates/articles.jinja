@@ -27,11 +27,7 @@
     .article {
         box-shadow: rgba(50, 50, 93, 0.25) 0px 2px 5px -1px, rgba(0, 0, 0, 0.3) 0px 1px 3px -1px;
         padding-left: 10px;
-    }
-
-    .article {
         padding-top: 5px;
-        
     }
 
     .article_box {
@@ -89,7 +85,7 @@
 
 
 
-<ul id="articles" style="padding:20px;margin-top:30px;">
+<ul id="articles" style="padding:20px;margin-top:30px;list-style-type:none;">
 <h1>Articles</h1>
 <br/>
 {% if articles %}
@@ -111,7 +107,26 @@
         {% elif article.author.username == username and can_post %}
             <button class="edit" id ="edit" onclick="edit(this, '{{ article.title }}', '{{ article.content }}', '{{ article.id }}')">Edit</button>   
         {% endif %}
-        <button class="comment" onclick="comment('{{ article.id }}')">Comment</button>
+        <br/>
+
+        <ul id="comment_section" class="comment_section">
+        {% if article.comments %}
+            {% for comment in article.comments %}
+            <li id="comment" class="comment">
+                <p>{{ comment.author.username }} 
+                    <b style="font-size: small"> {{ comment.date }} </b>
+                </p> 
+                <small> <b>{{ comment.author.account }}</b>
+                {% if comment.author.account == 'staff' %}
+                    {{ comment.author.staff_role }}
+                {% endif %}
+                </small> <br/>
+                <p>{{ article.content }}</p> <br/>
+            </li>
+        <input id="comment" placeholder="Add a comment">
+        <button class="comment" id="comment_button" onclick="comment(this, '{{ article.id }}')">Comment</button>
+        </ul>
+        
     </li>
     {% endfor %}
 {% else %}
@@ -146,7 +161,9 @@
 <script src="/static/js/libs/socket.io.min.js"></script>
 <script>
     const socket = io();
+    let username = "{{ username }}";
     // Add event listeners to the delete buttons
+    /*
     var deleteButtons = document.getElementsByClassName('delete');
     for (var i = 0; i < deleteButtons.length; i++) {
         deleteButtons[i].addEventListener('click', function(event) {
@@ -165,12 +182,19 @@
         var list = document.getElementById('articles');
         list.removeChild(item);
     }
+    */
 
-
-    function remove(article_id) {
+    function remove(liElem, article_id) {
         socket.emit("delete_article", article_id, (success) => {
             if (typeof success == "string") {
+                //unsuccessful removal
                 alert(success);
+            }
+            else {
+                //dynamically update articles list
+                var article = liElem.parentNode;
+                var list = article.parentNode;
+                list.removeChild(article);
             }
         }); 
     }
@@ -204,15 +228,14 @@
 
         socket.emit("re_post", id, title, content, (success) => {
             console.log(success)
-            //successful post
             
+            //successful post
             if (typeof success == "string") {
                 //update list dynamically
                 var article = liElem.parentNode;
                 var new_article = article.cloneNode(true);
                 
                 var date = new_article.querySelector("#article_date");
-                console.log(date);
                 date.textContent = success;
                 
                 var old_title = new_article.querySelector("#article_title");
@@ -224,20 +247,25 @@
                 var parent = article.parentNode;
                 parent.replaceChild(new_article, article);
 
-                popup = document.getElementById('article_box');
-                popup.classList.toggle("hide");
-                
             }
             else {
                 alert("Could not update article");
-               
             }
 
-            //console.log(popup);
-
-           // popup.classList.toggle("show");
          });
-    
+        
+        popup = document.getElementById('article_box');
+        popup.classList.toggle("hide");  
+    }
+
+    function comment(liElem, article_id) {
+        content = $("#comment").val();
+        socket.emit("comment", username, article_id, content, (success) => {
+            if (success) {
+
+            }
+        })
+
         
     }
 

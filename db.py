@@ -326,11 +326,19 @@ def edit_article(article_id, new_title=None, new_content=None):
         return False
 
 
-"""
+
 #make comment on article
-def comment():
+def add_comment(article_id, username, content):
+    with Session(engine) as session:
+        user = get_user(username)
+      
+        comment = Comment(user_id=user.id, article_id=article_id, content=content)
+        session.add(comment)
+        session.commit()
+        return True
 
 
+"""
 #only staff allowed
 def delete_comment():
 
