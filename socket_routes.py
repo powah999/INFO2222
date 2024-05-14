@@ -394,9 +394,15 @@ def new_post(title, content):
     return True
 
 @socketio.on("delete_article")
-def delete_article(article):
-    if not db.delete_article(username=session["username"], article=article):
-        return False
+def delete_article(article_id):
+    user = db.get_user(username=session["username"])
+    
+    #check if staff
+    if user.account != "staff":
+        return "Students cannot delete articles"
+    
+    if not db.delete_article(article_id=article_id):
+        return "Could not delete article"
     
     return True
 

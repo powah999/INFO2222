@@ -64,13 +64,12 @@
 
 
 
-<div style="padding:20px;margin-top:30px;">
+<ul id="articles" style="padding:20px;margin-top:30px;">
 <h1>Articles</h1>
 <br/>
-
 {% if articles %}
     {% for article in articles %}
-    <div class="article">
+    <li id="article" class="article">
         <h2 class="title">{{ article.title }}</h2>
         {{ article.author.username }} <br/>
         <small> <b>{{ article.author.account }}</b>
@@ -82,22 +81,24 @@
         {{ article.content }} <br/><br/>
         <!-- enable button if staff -->
         {% if account == "staff" or (article.author.username == username and can_post) %}
-            <button onclick="delete({{ article }})">Delete</button>
-            <button onclick="edit({{ article }})">Edit</button>
-            <button onclick="comment({{ article }})">Comment</button>
+            <button class="delete" onclick="delete('{{ article.id }}')">Delete</button>
+            <button onclick="edit('{{ article.id }}')">Edit</button>
+            <button onclick="comment('{{ article.id }}')">Comment</button>
         {% else %}
             <button type="button" disabled>Delete</button>
             <button type="button" disabled>Edit</button>
-            <button onclick="comment(article)">Comment</button>
+            <button onclick="comment('{{ article.id }}')">Comment</button>
         {% endif %}
-    </div>
+    </li>
 
     {% endfor %}
-{% else %} 
+{% else %}
+<li>
     No articles posted yet
+</li> 
 {% endif %}
 
-</div>
+</ul>
 
 <div class="popup" id="popup">
     <div class="article_box" id="article_box">
@@ -117,16 +118,53 @@
 
 <script src="/static/js/libs/socket.io.min.js"></script>
 <script>
+
     const socket = io();
-    function delete(article) {
-        socket.emit("delete_article", article, (success) => {
-            if (success) {
-                //remove articles dynamically
+    // Add event listeners to the delete buttons
+    var deleteButtons = document.getElementsByClassName('delete');
+    for (var i = 0; i < deleteButtons.length; i++) {
+        deleteButtons[i].addEventListener('click', function(event) {
+            var article = event.target.parentNode; // The 'li' element to remove
+            removeListItem(article);
+        });
+    }
+
+    // Function to remove an item from the list
+    function removeListItem(item) {
+        // The parent node ('ul') of the item to be removed ('li')
+        var list = document.getElementById('articles');
+        list.removeChild(item);
+    }
+
+
+    function delete(article_id) {
+        socket.emit("delete_article", article_id, (success) => {
+            if (typeof success == "string") {
+                alert(success);
             }
         });
 
         
     }
+
+    function delete_article(article_id) {
+        let liElements = document.querySelectorAll("#articles li");
+        // Loop through each <li> element
+        liElements.forEach(function (li) {
+            // Find the <div> element inside the <li>
+
+            var div = li.querySelector("." + senderName);
+            console.log(div)
+            if (div) {
+                // Remove the <div> element from its parent node (the <li>)
+                div.parentNode.removeChild(div);
+                console.log("removed")
+            }
+        });
+    }
+
+    
+    
 
     //popup to edit post
     function edit(article) {

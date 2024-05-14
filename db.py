@@ -288,14 +288,8 @@ def get_all_articles():
         return articles
 
 #only staff allowed    
-def delete_article(username, article):
-    with Session(engine) as session:
-        user = get_user(username=username)
-        #check if staff
-        if user.account != "staff":
-            print("Students cannot delete articles")
-            return False
-        
+def delete_article(article_id):
+    with Session(engine) as session:        
         #remove article from db
         article = session.query(Article).filter_by(id=article_id).first()
 
