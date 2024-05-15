@@ -315,7 +315,7 @@ def edit_article(article_id, new_title=None, new_content=None):
             if new_content:
                 article.content = new_content
             
-            article.date = datetime.today().strftime("%d/%m/%Y")
+            article.date = datetime.today().strftime("%d %B, %Y")
             
             print("After: ")
             print(article)
@@ -331,11 +331,15 @@ def edit_article(article_id, new_title=None, new_content=None):
 def add_comment(article_id, username, content):
     with Session(engine) as session:
         user = get_user(username)
-      
-        comment = Comment(user_id=user.id, article_id=article_id, content=content)
-        session.add(comment)
-        session.commit()
-        return datetime.today().strftime("%d/%m/%Y")
+
+        article = session.query(Article).filter_by(id=article_id).first()
+        if article:
+            comment = Comment(user_id=user.id, article_id=article_id, content=content)
+            session.add(comment)
+            session.commit()
+            return comment.date
+
+        return False
 
 
 """

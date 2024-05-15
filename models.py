@@ -121,7 +121,7 @@ class Article(Base):
     #author = Mapped[str] = mapped_column(, default="Anonymous")
     title: Mapped[str] = mapped_column(String)
     content: Mapped[str] = mapped_column(Text)
-    date: Mapped[str] = mapped_column(String, default=datetime.today().strftime("%d/%m/%Y"))
+    date: Mapped[str] = mapped_column(String, default=datetime.today().strftime("%d %B, %Y"))
     #file_name: Mapped[str] = mapped_column(String, default='')
     
     comments: Mapped[List["Comment"]] = relationship("Comment", backref='post')
@@ -135,7 +135,7 @@ class Comment(Base):
     
     #author = Mapped[str] = mapped_column(String, default="Anonymous")
     content: Mapped[str] = mapped_column(Text)
-    date: Mapped[str] = mapped_column(String, default=datetime.today().strftime("%d/%m/%Y"))
+    date: Mapped[str] = mapped_column(String, default=datetime.today().strftime("%d %B, %Y"))
 
 
 # stateful counter used to generate the room id

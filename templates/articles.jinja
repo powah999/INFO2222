@@ -134,9 +134,10 @@
                 <p id="content">{{ comment.content }}</p>
             </li>
         {% endif %}
-        </ul>
         <input id="comment" placeholder="Add a comment">
         <button class="comment" id="comment_button" onclick="comment(this, '{{ article.id }}')">Comment</button>
+        </ul>
+        
     </li>
     {% endfor %}
 {% else %}
@@ -173,6 +174,7 @@
     const socket = io();
     let username = "{{ username }}";
     let account = "{{ account }}";
+    let role = "{{ role }}";
 
     // Add event listeners to the delete buttons
     /*
@@ -219,8 +221,8 @@
             else {
                 //dynamically update articles list
                 var article = liElem.parentNode;
-                var list = article.parentNode;
-                list.removeChild(article);
+                var all_articles = article.parentNode;
+                all_articles.removeChild(article);
             }
         }); 
     }
@@ -270,8 +272,8 @@
                 var old_content = new_article.querySelector("#article_content");  
                 old_content.textContent = content;
 
-                var parent = article.parentNode;
-                parent.replaceChild(new_article, article);
+                var all_articles = article.parentNode;
+                all_articles.replaceChild(new_article, article);
 
             }
             else {
@@ -284,13 +286,14 @@
         popup.classList.toggle("hide");  
     }
 
-    function comment(liElem, article_id) {
+    //create new comment
+    function comment(comment_button, article_id) {
         content = $("#comment").val();
         socket.emit("comment", username, article_id, content, (date) => {
             if (typeof success == "string") {
                 //add comment to article
                 list = getElementById("comments")
-                var article = liElem.parentNode;
+                var all_comments = comment_button.parentNode;
                 var new_comment = document.createElement("li");
 
                 var p = document.createElement("p");
@@ -318,7 +321,7 @@
                 }
                 new_comment.appendChild(p2);
 
-                article.appendChild(new_comment);
+                all_comments.appendChild(new_comment);
             }
             else {
                 alert("Could not create comment");
