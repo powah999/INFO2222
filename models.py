@@ -13,7 +13,7 @@ or use SQLite, if you're not into fancy ORMs (but be mindful of Injection attack
 from sqlalchemy import String, ForeignKey, Integer, Text, UniqueConstraint, DateTime, CheckConstraint, Boolean
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from typing import Dict, List
-import datetime
+from datetime import datetime 
 import enum
 
 
@@ -121,7 +121,7 @@ class Article(Base):
     #author = Mapped[str] = mapped_column(, default="Anonymous")
     title: Mapped[str] = mapped_column(String)
     content: Mapped[str] = mapped_column(Text)
-    date: Mapped[datetime.date] = mapped_column(DateTime, default=datetime.date.today())
+    date: Mapped[str] = mapped_column(String, default=datetime.today().strftime("%d/%m/%Y"))
     #file_name: Mapped[str] = mapped_column(String, default='')
     
     comments: Mapped[List["Comment"]] = relationship("Comment", backref='post')
@@ -135,7 +135,7 @@ class Comment(Base):
     
     #author = Mapped[str] = mapped_column(String, default="Anonymous")
     content: Mapped[str] = mapped_column(Text)
-    date: Mapped[datetime.date] = mapped_column(DateTime, default=datetime.date.today())
+    date: Mapped[str] = mapped_column(String, default=datetime.today().strftime("%d/%m/%Y"))
 
 
 # stateful counter used to generate the room id

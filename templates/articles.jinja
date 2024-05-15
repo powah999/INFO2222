@@ -76,6 +76,18 @@
         visibility: hidden;
     }
 
+    .commment_section .show {
+        visibility: visible;
+    }
+
+    .commment_section .hide {
+        visibility: hidden;
+    }
+
+    .commment_section {
+        visibility: hidden;
+    }
+
     .content-box {
         width: 500px;
         height: 200px; 
@@ -109,24 +121,22 @@
         {% endif %}
         <br/>
 
+        <a href="javascript:toggle_comments('show')" id="comment_view">View comments</a>
         <ul id="comment_section" class="comment_section">
         {% if article.comments %}
             {% for comment in article.comments %}
-            <li id="comment" class="comment">
-                <p>{{ comment.author.username }} 
-                    <b style="font-size: small"> {{ comment.date }} </b>
-                </p> 
-                <small> <b>{{ comment.author.account }}</b>
+            <li id="comment" class="comment" style="font-size: small">
+                <p id="username">{{ comment.author.username }} {{ comment.date }} </p> 
+                <b id="account">{{ comment.author.account }} </b>
                 {% if comment.author.account == 'staff' %}
-                    {{ comment.author.staff_role }}
+                    <div>{{ comment.author.staff_role }}</div>
                 {% endif %}
-                </small> <br/>
-                <p>{{ article.content }}</p> <br/>
+                <p id="content">{{ comment.content }}</p>
             </li>
+        {% endif %}
+        </ul>
         <input id="comment" placeholder="Add a comment">
         <button class="comment" id="comment_button" onclick="comment(this, '{{ article.id }}')">Comment</button>
-        </ul>
-        
     </li>
     {% endfor %}
 {% else %}
@@ -162,6 +172,8 @@
 <script>
     const socket = io();
     let username = "{{ username }}";
+    let account = "{{ account }}";
+
     // Add event listeners to the delete buttons
     /*
     var deleteButtons = document.getElementsByClassName('delete');
@@ -183,6 +195,20 @@
         list.removeChild(item);
     }
     */
+
+    function toggle_comments(action) {
+        comments = document.getElementById("comment_section");
+        text = document.getElementById("comment_view");
+        if (action == "show") {
+            comments.classList.toggle("show");
+            text.textContent = "Hide comments";
+        }
+        else {
+            comments.classList.toggle("hide");
+            text.textContent = "View comments";
+        }
+        
+    }
 
     function remove(liElem, article_id) {
         socket.emit("delete_article", article_id, (success) => {
@@ -260,14 +286,47 @@
 
     function comment(liElem, article_id) {
         content = $("#comment").val();
-        socket.emit("comment", username, article_id, content, (success) => {
-            if (success) {
+        socket.emit("comment", username, article_id, content, (date) => {
+            if (typeof success == "string") {
+                //add comment to article
+                list = getElementById("comments")
+                var article = liElem.parentNode;
+                var new_comment = document.createElement("li");
 
+                var p = document.createElement("p");
+                var b = document.createElement("b");
+                b.innerText = username;
+                p.appendChild(username);
+                p.appendChild(date);
+                
+                var b2 = document.createElement("b");
+                b2.innerText = account;
+
+                if (account == "staff") {
+                    let div = document.createElement("div");
+                    div.innerText = role;
+                }
+                
+                var p2 = document.createElement("p");
+                p2.innerText = content;
+
+                new_comment.appendChild(p);
+                new_comment.appendChild(b);
+                new_comment.appendChild(b2);
+                if (account == "staff") {
+                    new_comment.appendChild(div);
+                }
+                new_comment.appendChild(p2);
+
+                article.appendChild(new_comment);
+            }
+            else {
+                alert("Could not create comment");
             }
         })
-
-        
     }
+
+                
 
 </script>
 

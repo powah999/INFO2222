@@ -284,7 +284,7 @@ def articles():
 
    # account = db.get_user(username).account
 
-    return render_template("articles.jinja", articles=articles, username='a', account='student', can_post=True)
+    return render_template("articles.jinja", articles=articles, username='a', account='student', can_post=True, role='N/A')
 
 @app.route("/navbar")
 def navbar():

@@ -315,13 +315,13 @@ def edit_article(article_id, new_title=None, new_content=None):
             if new_content:
                 article.content = new_content
             
-            article.date = datetime.today()
+            article.date = datetime.today().strftime("%d/%m/%Y")
             
             print("After: ")
             print(article)
             
             session.commit()
-            return datetime.today().strftime("%Y-%m-%d %H:%M:%S")
+            return article.date
     
         return False
 
@@ -335,7 +335,7 @@ def add_comment(article_id, username, content):
         comment = Comment(user_id=user.id, article_id=article_id, content=content)
         session.add(comment)
         session.commit()
-        return True
+        return datetime.today().strftime("%d/%m/%Y")
 
 
 """
