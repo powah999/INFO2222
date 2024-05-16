@@ -5,7 +5,7 @@
 
 <style>
     /* nav bar tabs */   
-    ul.navbar {
+    .navbar {
         list-style-type: none;
         position: fixed;
         top: 0;
@@ -16,12 +16,29 @@
         background-color: #333;
         }
 
+    .logo {
+        display: inline-block;
+        vertical-align: top;
+        width: 50px;
+        height: 50px;
+        margin-right: 20px;
+        margin-top: 15px;    /* if you want it vertically middle of the navbar. */
+    }
+
+    .navbar_tabs {
+        display: inline-block;
+        vertical-align: top;
+        margin-right: 20px;
+        height: 80px;        /* if you want it to take the full height of the bar */
+        line-height: 80px;    /* if you want it vertically middle of the navbar */
+    }
+
     /* nav bar display */   
-    ul.navbar li {
+    .navbar_tabs li {
         float: left;
     }
 
-    ul.navbar li a {
+    .navbar_tabs li a {
         display: block;
         color: white;
         text-align: center;
@@ -30,26 +47,18 @@
     }
 
     /* change tab colour when mouse hovers */
-    ul.navbar li a:hover {
+    .navbar_tabs li a:hover:not(.active) {
         background-color: #111;
         }
         
     /* change navbar to be stacked for smaller screen sizes */
     @media screen and (max-width: 600px) {
-        ul.navbar li.right, 
-        ul.navbar li {float:none;}
+        .navbar_tabs li.right, 
+        .navbar_tabs li {float:none;}
         }
 
 </style>
 
-<!--Navbar code / links-->
-<ul class = "navbar">
-    <li><a href="#home">Home</a></li>
-    <li><a href="#requests">Requests</a></li>
-    <li><a href="#messages">Messages</a></li>
-    <li><a href="#archive">Article archive</a></li>
-    <li><a href="#profile">Profile</a></li> 
-    <li style="float:right"><a class="active" href="#signout">Sign Out</a></li>
-</ul>
+ 
 
 {% endblock %}

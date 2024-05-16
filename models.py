@@ -122,7 +122,7 @@ class Article(Base):
     title: Mapped[str] = mapped_column(String)
     content: Mapped[str] = mapped_column(Text)
     date: Mapped[str] = mapped_column(String, default=datetime.today().strftime("%d %B, %Y"))
-    #file_name: Mapped[str] = mapped_column(String, default='')
+    file_name: Mapped[str] = mapped_column(String, default='')
     
     comments: Mapped[List["Comment"]] = relationship("Comment", backref='post')
 

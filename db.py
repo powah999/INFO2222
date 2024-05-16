@@ -249,13 +249,13 @@ def get_user(username: str):
 
 
 #create post
-def create_article(username, title, content):
+def create_article(username, title, content, file_name):
     with Session(engine) as session:
         user = get_user(username)
 
         #check if user is muted --> return "User is muted from creating posts"
         if user.can_post:
-            article = Article(user_id=user.id, title=title, content=content)
+            article = Article(user_id=user.id, title=title, content=content, file_name=file_name)
             session.add(article)
             session.commit()
             return True
@@ -295,6 +295,9 @@ def delete_article(article_id):
         article = session.query(Article).filter_by(id=article_id).first()
 
         if article:
+            print("true")
+            for comment in article.comments:
+                session.delete(comment)
             session.delete(article)
             session.commit()
             return True
@@ -326,8 +329,6 @@ def edit_article(article_id, new_title=None, new_content=None):
     
         return False
 
-
-
 #make comment on article
 def add_comment(article_id, username, content):
     with Session(engine) as session:
@@ -342,6 +343,21 @@ def add_comment(article_id, username, content):
             return comment.date
 
         return False
+
+def delete_comment(comment_id):
+    with Session(engine) as session:        
+        #remove article from db
+        comment = session.query(Comment).filter_by(id=comment_id).first()
+
+        if comment:
+            print("true")
+            session.delete(comment)
+            session.commit()
+            return True
+
+        print("Comment doesn't exist")
+        return False
+
 
 def mute_post(staff_name, username):
     user = get_user(username)

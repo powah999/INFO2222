@@ -69,8 +69,6 @@ def login():
 # handles a post request when the user clicks the log in button
 @app.route("/login/user", methods=["POST"])
 def login_user():
-
-
     if not request.is_json:
         abort(404)
 
@@ -213,10 +211,8 @@ def signup_user():
 
                 attempts.reset(username)
 
-
                 session['token'] = secrets.token_hex(60)
                 session_tokens[username] = session.get('token')
-
 
                 session['username'] = username
                 session_ids[username] = None
@@ -236,9 +232,10 @@ def signup_user():
 def page_not_found(_):
     return render_template('404.jinja'), 404
 
-# home page, where the messaging app is
+# messages page
 @app.route("/home")
 def home():
+    """
     username = request.args.get("username")
 
     if request.args.get("username") is None:
@@ -254,7 +251,8 @@ def home():
     # uncomment once final
     # if session.get('username') not in session_tokens.keys() or (session.get('token') != session_tokens.get(session.get('username'))):
     #     return redirect(url_for('login'))    
-
+    """
+    username = session.get("username")
     friends = db.get_friends(username)
     
     friend_status = {}
@@ -276,15 +274,49 @@ def home():
     return render_template("home.jinja", username=username, friends=friends, received=db.get_received(username), pending=db.get_sent(username), friend_status=friend_status, friend_roles=friend_roles)
 
 
-#page containing all posts/knowledge repository
+#home page, contains all posts
 @app.route("/articles")
 def articles():
+    username = request.args.get("username")
+
+    if request.args.get("username") is None:
+        abort(404)
+    
+    if 'username' not in session or ('token' not in session):
+        print('\nusername or token not in session\n')
+        return redirect(url_for('login'))
+
+    if session.get('username') != username:
+        print('\n your session is not equal to the users actual session\n')
+        return redirect(url_for('login'))    
+    
+    friends = db.get_friends(username)
+    
+    friend_status = {}
+    for friend in friends:
+        if friend.username not in session_ids.keys():
+            friend_status[friend.username] = 'offline'
+        else:
+            friend_status[friend.username] = 'online'
+
+    friend_roles = {}
+    for friend in friends:
+        friend_info = db.get_user(friend.username)
+        account = friend_info.account
+        if account == "staff":
+            friend_roles[friend.username] = friend_info.staff_role
+        else:
+            friend_roles[friend.username] = account
+    
     articles = db.get_all_articles()
-    #username= session["username"]
 
-   # account = db.get_user(username).account
-
-    return render_template("articles.jinja", articles=articles, username='a', account='student', can_post=True, role='N/A')
+    return render_template("articles.jinja", 
+                           articles=articles, 
+                           username=username, 
+                           account=db.get_user(username).account, 
+                           can_post=db.get_user(username).can_post, 
+                           role=db.get_user(username).staff_role
+                           )
 
 @app.route("/navbar")
 def navbar():
@@ -297,33 +329,52 @@ def new_article():
 
     return render_template("newarticle.jinja")
 
-'''
-@app.route("/upload", methods=["POST"])
-def upload_file():
-    title = request.form.get('title')
-    content = request.form.get('content')
-    file = request.files.get('file')
 
-    if not title or not content:
-        return redirect(url_for('new_articles'))
+@app.route("/logout")
+def logout():
+    if (session.get("username")):
+        username = session.get("username")
+        session_ids.pop(username, None)
+        public_keys.keys.pop(username, None)
+        session_tokens.pop(username, None)
+        session.clear()
+
+    return redirect(url_for("login"))
+
+
+@app.route("/upload", methods=["POST", "GET"])
+def upload(file_name=None):
+    if request.method == "POST":
+        title = request.form.get('title')
+        content = request.form.get('content')
+        file = request.files.get('file')
+
+        if not title or not content:
+            return "Failed to upload"
+        
+        if file and file.filename != '':
+            file.save(os.path.join(app.config['UPLOAD_PATH'], file.filename))
+            file_name = os.path.join(app.config['UPLOAD_PATH'], file.filename)
+        else:
+            return "Failed to upload file"
     
-    if file and file.filename != '':
-        file.save(os.path.join(app.config['UPLOAD_PATH'], file.filename))
-        file_name = os.path.join(app.config['UPLOAD_PATH'], file.filename)
+        if not db.create_article(username=session["username"], title=title, content=content, file_name=file_name):
+            return redirect(url_for('new_article'))
+
+        return redirect(url_for('articles'))
     else:
-        file_name = ''
-   
-    if not db.create_article(username=session["username"], title=title, content=content, file_name=file_name):
-        return redirect(url_for('new_article'))
-    
-    return redirect(url_for('articles'))
+        file_name = request.args.get("file_name")
+        if file_name:
+            return url_for(send_file(file_name))
+        
+        print("File name doesn't exist")
+        return "File name doesn't exist"
 
 
-@app.route('/uploads/<filename>')
-def upload(filename):
+@app.route('/upload/<filename>')
+def send_file(filename):
     return send_from_directory(app.config['UPLOAD_PATH'], filename)
 
-'''
 
 if __name__ == '__main__': 
     socketio.run(app, host="localhost", port=5000 ,debug=False, ssl_context=('localhost.crt', 'localhost.key'))

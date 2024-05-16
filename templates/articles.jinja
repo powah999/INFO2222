@@ -87,7 +87,7 @@
 
 
 <ul id="articles" style="padding:20px;margin-top:30px;list-style-type:none;">
-<h1>Articles</h1>
+<h1>Home</h1>
 <br/>
 {% if articles %}
     {% for article in articles %}
@@ -101,16 +101,20 @@
         </small> <br/>
         <p style="font-size: small" id="article_date"> {{ article.date }} </p>
         <p id="article_content" >{{ article.content }}</p> <br/>
+        {% if article.file_name != '' %}
+            <a id="download" href="#">{{ article.file_name }} </a>
+        {% endif %}
+        
         <!-- enable button if staff -->
         {% if account == "staff" %}
-            <button class="delete" onclick="remove('{{ article.id }}')">Delete</button>
+            <button class="delete" onclick="remove(this, '{{ article.id }}', 'delete_article')">Delete</button>
             <button class="edit" id="edit" onclick="edit(this, '{{ article.title }}', '{{ article.content }}', '{{ article.id }}')">Edit</button>
         {% elif article.author.username == username and can_post %}
             <button class="edit" id ="edit" onclick="edit(this, '{{ article.title }}', '{{ article.content }}', '{{ article.id }}')">Edit</button>   
         {% endif %}
         <br/>
 
-        <a href="javascript:toggle_comments()" id="hide_view" class="hide_view">View comments  </a>
+        <a href="javascript:toggle_comments()" id="hide_view" class="hide_view">View comments</a>
 
         <ul id="comment_section" class="comment_section" style="display:none;list-style-type:none;">
         {% if article.comments %}
@@ -121,20 +125,27 @@
                     <div id="role" style="color:#969696;">{{ comment.author.staff_role }}</div>
                 {% endif %}
                 <div>{{ comment.date }}</div>
-                <p id="content">{{ comment.content }}</p>
+                <p id="content">{{ comment.content }}</p> <br/>
+                {% if account == "staff" %}
+                    <button class="delete" onclick="remove(this, '{{ comment.id }}', 'delete_comment')">Delete</button>
+                {% endif %}
             </li>
             {% endfor %}
+        {% else %}
+        <li class="no_articles" id="no_articles">
+            No comments posted yet
+        </li>
         {% endif %}
         </ul>
         <a href="javascript:toggle_comments()" id="show_view" class="show_view" style="display:none;">Hide comments <br/> </a> 
 
-        <input style="margin:10px" id="add_comment" placeholder="Add a comment">
+        <input style="margin:8px" id="add_comment" placeholder="Add a comment">
         <button id="comment_button" onclick="comment('{{ article.id }}')">Comment</button>
 
     </li>
     {% endfor %}
 {% else %}
-<li>
+<li class="no_articles" id="no_articles">
     No articles posted yet
 </li> 
 {% endif %}
@@ -169,28 +180,30 @@
     let account = "{{ account }}";
     let role = "{{ role }}";
 
-    // Add event listeners to the delete buttons
-    /*
-    var deleteButtons = document.getElementsByClassName('delete');
-    for (var i = 0; i < deleteButtons.length; i++) {
-        deleteButtons[i].addEventListener('click', function(event) {
-            var article = event.target.parentNode; // The 'li' element to remove
-
-            removeListItem(article);
-
-        });
-    }
-
-   
-
-    // Function to remove an item from the list
-    function removeListItem(item) {
-        // The parent node ('ul') of the item to be removed ('li')
-        var list = document.getElementById('articles');
-        list.removeChild(item);
-    }
-    */
-
+    article = document.getElementsByClassName("article");
+    article.forEach(function(elem) {
+        a = elem.querySelector("#download");
+        console.log(a.textContent);
+        if (a) {
+            file_name = a.textContent;
+            let getFile = "{{ url_for('upload') }}";
+            axios.get(getFile, {
+                file_name: file_name,
+                responseType:'blob',
+            })
+            .then((file) => {
+                const url = URL.createObjectURL(file.data);
+                a.href = url;
+                a.download = file_name;
+                console.log("success");
+            })
+            .catch((err) => {
+                console.log("fail");
+            })
+        }
+    });
+    
+    
     function toggle_comments() {
         comments = document.getElementById("comment_section");
         show_sign= document.getElementById("hide_view");
@@ -207,19 +220,28 @@
         }
     }
 
-    function remove(liElem, article_id) {
-        socket.emit("delete_article", article_id, (success) => {
+    function remove_article(liElem, id, call) {
+        console.log(id)
+
+        socket.emit(call, id, (success) => {
             if (typeof success == "string") {
                 //unsuccessful removal
                 alert(success);
             }
             else {
-                //dynamically update articles list
-                var article = liElem.parentNode;
-                var all_articles = article.parentNode;
-                all_articles.removeChild(article);
+                //dynamically update list
+                var li_item = liElem.parentNode;
+                var ul = li_item.parentNode;
+                ul.removeChild(li_item);
+
+                if (call === "delete_article" and ul.length === 0) {
+                    none = document.getElementById("no_articles");
+                    none.style.display = "block";
+                }
             }
         }); 
+
+        
     }
 
 

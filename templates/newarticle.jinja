@@ -56,12 +56,17 @@
 
 
 <div class="article_box" style="padding:20px;margin-top:50px;">
-    <h1>New Article</h1>
+    <h1>Create a new article</h1>
     
-    <p>Title:</p>
-        <input id="title" width="300px" />
-    <p>Content:</p>
-        <input id="content" class="content-box"/>
+    <form id="article">
+        <p>Title:</p>
+            <input id="title" type="text" name="title" width="300px" />
+        <p>Content:</p>
+            <input id="content" type="text" name="content" class="content-box"/>
+        <p>Upload attachement:</p>
+            <input id="file" type="file" name="file"/>
+        <button class="button" type="submit">Post</button>
+    </form>
 </div>
 
 
@@ -75,6 +80,21 @@
 
 <script src="/static/js/libs/socket.io.min.js"></script>
 <script>
+    const article = document.getElementById("article");
+    let url = '{{ url_for("upload") }}';
+    
+    article.addEventListener("submit", (e) => {
+        e.preventDefault();
+
+        const formData = new FormData(article);
+
+        axios.post(url, formData)
+        .then(res => console.log(res + "success"))
+        .catch(err => console.log(err + "fail"))
+    });
+
+
+
     const socket = io();
     //create new post
     function post() {

@@ -415,7 +415,17 @@ def re_post(id, new_title, new_content):
 def comment(username, article_id, content):
     return db.add_comment(article_id=article_id, username=username, content=content)
 
-
+def delete_comment(comment_id):
+    user = db.get_user(username=session["username"])
+    
+    #check if staff
+    if user.account != "staff":
+        return "Students cannot delete comments"
+    
+    if not db.delete_comment(comment_id=comment_id):
+        return "Could not delete article"
+    
+    return True
 
 
 # when the client connects to a socket

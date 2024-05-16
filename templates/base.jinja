@@ -68,11 +68,11 @@ Yeah I know it's pretty ugly...
             <li><a href="{{ url_for('articles') }}">Home</a></li>
             <li><a href="#requests">Requests</a></li>
             <li><a href=" {{ url_for('home') }}">Messages</a></li>
-            <li><a href="#archive">Article archive</a></li>
-            <li><a href="#profile">Profile</a></li> 
-            <li class="right"><a class="active" href="#signout">Sign Out</a></li>
+            <li><a href="{{ url_for('new_article') }}">New Article</a></li>
+            <li><a href="#profile">Users</a></li> 
+            <li class="right"><a class="active" href="{{ url_for('logout')}}">Sign Out</a></li>
         </ul>
-        
+
 
         {% block content %} 
         {% endblock %}
