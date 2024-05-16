@@ -296,6 +296,7 @@ def delete_article(article_id):
 
         if article:
             session.delete(article)
+            session.commit()
             return True
 
         print("Article doesn't exist")
@@ -334,6 +335,7 @@ def add_comment(article_id, username, content):
 
         article = session.query(Article).filter_by(id=article_id).first()
         if article:
+            print("true")
             comment = Comment(user_id=user.id, article_id=article_id, content=content)
             session.add(comment)
             session.commit()
@@ -341,9 +343,61 @@ def add_comment(article_id, username, content):
 
         return False
 
+def mute_post(staff_name, username):
+    user = get_user(username)
+    staff = get_user(staff_name)
 
-"""
+    if not (staff and user):
+        print("Staff or user accounts don't exist")
+        return False
+
+    if staff.can_post:
+        if staff.staff_role == "admin user":
+            user.can_post = False
+        elif staff.staff_role == "administrative staff" and (user.staff_role != "admin user"):
+            user.can_post = False
+        elif staff.staff_role == "academic" and (user.staff_role == "N/A"):
+            user.can_post = False 
+        else:
+            print("Staff member is not authorised to mute user")   
+            return False
+
+        return True
+    
+    return False
+
+def mute_chat(staff_name, username):
+    user = get_user(username)
+    staff = get_user(staff_name)
+    if not (staff and user):
+        print("Staff or user accounts don't exist")
+        return False
+    
+    if staff.can_message:
+        if staff.staff_role == "admin user":
+            user.can_message = False
+        elif staff.staff_role == "administrative staff" and (user.staff_role != "admin user"):
+            user.can_message = False
+        elif staff.staff_role == "academic" and (user.staff_role == "N/A"):
+            user.can_message = False 
+        else:
+            print("Staff member is not authorised to mute user")   
+            return False
+
+        return True
+
+    return False
+    
 #only staff allowed
-def delete_comment():
+def delete_comment(comment_id):
+    with Session(engine) as session:        
+        #remove article from db
+        comment = session.query(Comment).filter_by(id=comment_id).first()
 
-"""
+        if comment:
+            session.delete(comment)
+            session.commit()
+            return True
+
+        print("Comment doesn't exist")
+        return False

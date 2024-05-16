@@ -76,17 +76,6 @@
         visibility: hidden;
     }
 
-    .commment_section .show {
-        visibility: visible;
-    }
-
-    .commment_section .hide {
-        visibility: hidden;
-    }
-
-    .commment_section {
-        visibility: hidden;
-    }
 
     .content-box {
         width: 500px;
@@ -121,23 +110,27 @@
         {% endif %}
         <br/>
 
-        <a href="javascript:toggle_comments('show')" id="comment_view">View comments</a>
-        <ul id="comment_section" class="comment_section">
+        <a href="javascript:toggle_comments()" id="hide_view" class="hide_view">View comments  </a>
+
+        <ul id="comment_section" class="comment_section" style="display:none;list-style-type:none;">
         {% if article.comments %}
             {% for comment in article.comments %}
-            <li id="comment" class="comment" style="font-size: small">
-                <p id="username">{{ comment.author.username }} {{ comment.date }} </p> 
-                <b id="account">{{ comment.author.account }} </b>
+            <li id="comment" class="comment" style="font-size:small;">
+                <div> <b>{{ comment.author.username }}</b> {{ comment.author.account }} </div> 
                 {% if comment.author.account == 'staff' %}
-                    <div>{{ comment.author.staff_role }}</div>
+                    <div id="role" style="color:#969696;">{{ comment.author.staff_role }}</div>
                 {% endif %}
+                <div>{{ comment.date }}</div>
                 <p id="content">{{ comment.content }}</p>
             </li>
+            {% endfor %}
         {% endif %}
-        <input id="comment" placeholder="Add a comment">
-        <button class="comment" id="comment_button" onclick="comment(this, '{{ article.id }}')">Comment</button>
         </ul>
-        
+        <a href="javascript:toggle_comments()" id="show_view" class="show_view" style="display:none;">Hide comments <br/> </a> 
+
+        <input style="margin:10px" id="add_comment" placeholder="Add a comment">
+        <button id="comment_button" onclick="comment('{{ article.id }}')">Comment</button>
+
     </li>
     {% endfor %}
 {% else %}
@@ -198,18 +191,20 @@
     }
     */
 
-    function toggle_comments(action) {
+    function toggle_comments() {
         comments = document.getElementById("comment_section");
-        text = document.getElementById("comment_view");
-        if (action == "show") {
-            comments.classList.toggle("show");
-            text.textContent = "Hide comments";
+        show_sign= document.getElementById("hide_view");
+        hide_sign = document.getElementById("show_view");
+
+        if (comments.style.display === "none") {
+            comments.style.display = "block";
+            show_sign.style.display = "none";
+            hide_sign.style.display = "block";
+        } else {
+            comments.style.display = "none";
+            show_sign.style.display = "block";
+            hide_sign.style.display = "none";
         }
-        else {
-            comments.classList.toggle("hide");
-            text.textContent = "View comments";
-        }
-        
     }
 
     function remove(liElem, article_id) {
@@ -288,38 +283,35 @@
 
     //create new comment
     function comment(comment_button, article_id) {
-        content = $("#comment").val();
+        content = $("#add_comment").val();
         socket.emit("comment", username, article_id, content, (date) => {
-            if (typeof success == "string") {
+            if (typeof date == "string") {
                 //add comment to article
-                list = getElementById("comments")
-                var all_comments = comment_button.parentNode;
+                all_comments = document.getElementById("comment_section");
                 var new_comment = document.createElement("li");
+                new_comment.style.fontSize = "small";
 
+                var div = document.createElement("div");
+                var bold = document.createElement("b");
+                bold.innerText = username;
+                div.appendChild(bold);
+                div.append(" " + account);
+                
+                var div_date = document.createElement("div");
+                div_date.innerText = date
+                
                 var p = document.createElement("p");
-                var b = document.createElement("b");
-                b.innerText = username;
-                p.appendChild(username);
-                p.appendChild(date);
-                
-                var b2 = document.createElement("b");
-                b2.innerText = account;
+                p.innerText = content;
 
+                new_comment.appendChild(div);
+                new_comment.appendChild(div_date);
                 if (account == "staff") {
-                    let div = document.createElement("div");
-                    div.innerText = role;
+                    let div_role = document.createElement("div");
+                    div_role.innerText = role;
+                    div_role.style.color = "#969696";
+                    new_comment.appendChild(div_role);
                 }
-                
-                var p2 = document.createElement("p");
-                p2.innerText = content;
-
                 new_comment.appendChild(p);
-                new_comment.appendChild(b);
-                new_comment.appendChild(b2);
-                if (account == "staff") {
-                    new_comment.appendChild(div);
-                }
-                new_comment.appendChild(p2);
 
                 all_comments.appendChild(new_comment);
             }
