@@ -358,6 +358,42 @@ def delete_comment(comment_id):
         print("Comment doesn't exist")
         return False
 
+def get_all_users():
+    with Session(engine) as session:
+        
+        if not session.query(User).first():
+            print("\n No users exist \n")
+            return None
+        
+        #get all articles by date posted
+        users = session.query(User).order_by(User.username)
+        
+        return users
+
+def can_post():
+    with Session(engine) as session:
+        
+        if not session.query(User).first():
+            print("\n No users exist \n")
+            return None
+        
+        #get all articles by date posted
+        users = session.query(User).filter_by(can_post == "true").order_by(User.username)
+        
+        return users
+
+def can_chat():
+    with Session(engine) as session:
+        
+        if not session.query(User).first():
+            print("\n No users exist \n")
+            return None
+        
+        #get all articles by date posted
+        users = session.query(User).filter_by(can_chat == "true").order_by(User.username)
+        
+        return users
+
 
 def mute_post(staff_name, username):
     user = get_user(username)
@@ -382,6 +418,27 @@ def mute_post(staff_name, username):
     
     return False
 
+def unmute_post(staff_name, username):
+    user = get_user(username)
+    staff = get_user(staff_name)
+
+    if not (staff and user):
+        print("Staff or user accounts don't exist")
+        return False
+
+    if staff.can_post:
+        if staff.staff_role == "admin user":
+            user.can_post = True
+        elif staff.staff_role == "administrative staff" and (user.staff_role != "admin user"):
+            user.can_post = True
+        elif staff.staff_role == "academic" and (user.staff_role == "N/A"):
+            user.can_post = True
+        else:
+            print("Staff member is not authorised to mute user")   
+            return False
+
+        return True
+
 def mute_chat(staff_name, username):
     user = get_user(username)
     staff = get_user(staff_name)
@@ -403,6 +460,27 @@ def mute_chat(staff_name, username):
         return True
 
     return False
+
+def unmute_chat(staff_name, username):
+    user = get_user(username)
+    staff = get_user(staff_name)
+
+    if not (staff and user):
+        print("Staff or user accounts don't exist")
+        return False
+
+    if staff.can_message:
+        if staff.staff_role == "admin user":
+            user.can_message = True
+        elif staff.staff_role == "administrative staff" and (user.staff_role != "admin user"):
+            user.can_message = True
+        elif staff.staff_role == "academic" and (user.staff_role == "N/A"):
+            user.can_message = True
+        else:
+            print("Staff member is not authorised to mute user")   
+            return False
+
+        return True
     
 #only staff allowed
 def delete_comment(comment_id):

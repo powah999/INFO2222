@@ -314,7 +314,8 @@ def articles():
                            articles=articles, 
                            username=username, 
                            account=db.get_user(username).account, 
-                           can_post=db.get_user(username).can_post, 
+                           can_post=db.get_user(username).can_post,
+                           can_chat=db.get_user(username).can_message, 
                            role=db.get_user(username).staff_role
                            )
 
@@ -375,6 +376,15 @@ def upload(file_name=None):
 def send_file(filename):
     return send_from_directory(app.config['UPLOAD_PATH'], filename)
 
+
+@app.route('/users')
+def users():
+    user = session.get("username")
+
+    if user.account == "staff":
+        return render_template("users.jinja", users=db.get_all_users)
+
+    return "Students are not authorised to this page"
 
 if __name__ == '__main__': 
     socketio.run(app, host="localhost", port=5000 ,debug=False, ssl_context=('localhost.crt', 'localhost.key'))

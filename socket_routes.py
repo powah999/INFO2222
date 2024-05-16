@@ -415,6 +415,7 @@ def re_post(id, new_title, new_content):
 def comment(username, article_id, content):
     return db.add_comment(article_id=article_id, username=username, content=content)
 
+@socketio.on("delete_comment")
 def delete_comment(comment_id):
     user = db.get_user(username=session["username"])
     
@@ -424,6 +425,27 @@ def delete_comment(comment_id):
     
     if not db.delete_comment(comment_id=comment_id):
         return "Could not delete article"
+    
+    return True
+
+@socketio.on("mute")
+def mute(username, call):
+
+    if call == "mute_chat" and not db.mute_chat(staff_name=session["username"], username=username):
+        return False
+    
+    if call == "mute_post" and not db.mute_post(staff_name=session["username"], username=username):
+        return False
+    
+    return True
+
+@socketio.on("unmute")
+def unmute(username, call):
+    if call == "unmute_chat" and not db.unmute_chat(staff_name=session["username"], username=username):
+        return False
+    
+    if call == "unmute_post" and not db.unmute_post(staff_name=session["username"], username=username):
+        return False
     
     return True
 

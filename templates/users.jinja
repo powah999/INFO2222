@@ -59,6 +59,151 @@
 
 </style>
 
- 
+<h1>User permissions</h1>
+<ul id="posting" style="padding:20px;margin-top:30px;list-style-type:none;">
+<h2>Posting articles:</h2>
+<br/>
+<h3>Authorised users:</h3>
+{% if users %}
+    {% for user in users %}
+        {% if user.can_post %}
+            <li id="user_post" class="post">
+                <h4>Name: {{user.username}} </h4>
+                {% if user.account == "staff" %}
+                <h5>Account type: <b> {{user.account}} </b> {{user.role}} </h5>
+                {% else %}
+                <h5>Account type: <b> {{user.account}} </h5>
+                <button id="mute_post" onclick="mute_post( '{{ user.username }}' )">Mute user</button>
+            </li>
+        {% else %}
+<h3>Muted users:</h3>
+            <li id="cant_post" class="cant_post">
+                <h4>Name: {{user.username}} </h4>
+                {% if user.account == "staff" %}
+                <h5>Account type: <b> {{user.account}} </b> {{user.role}} </h5>
+                {% else %}
+                <h5>Account type: <b> {{user.account}} </h5>
+                {% endif %}
+                <button id="unmute_post" onclick="unmute_post( '{{ user.username }}' )">Unmute user</button>
+            </li>
+        {% endif %}
+    {% endfor %}
+{% else %}
+    <div>No users exist</div>
+{% endif %}
+</ul>
+
+<ul id="chatting" style="padding:20px;margin-top:30px;list-style-type:none;">
+<h2>Joining chatrooms:</h2>
+<br/>
+<h3>Authorised users:</h3>
+{% if users %}
+    {% for user in users %}
+        {% if user.can_chat %}
+            <li id="can_chat" class="can_chat">
+                <h4>Name: {{user.username}} </h4>
+                {% if user.account == "staff" %}
+                    <h5>Account type: <b> {{user.account}} </b> {{user.role}} </h5>
+                {% else %}
+                    <h5>Account type: <b> {{user.account}} </h5>
+                {% endif %}
+                <button id="mute_chat" onclick="mute_chat(this, '{{ user.username }}' )">Mute user</button>
+            </li>
+<h3>Muted users:</h3>
+        {% else %}
+            <li id="cant_chat" class="cant_chat">
+                <h4>Name: {{user.username}} </h4>
+                {% if user.account == "staff" %}
+                    <h5>Account type: <b> {{user.account}} </b> {{user.role}} </h5>
+                {% else %}
+                    <h5>Account type: <b> {{user.account}} </h5>
+                {% endif %}
+                <button id="unmute_chat" onclick="unmute_chat( '{{ user.username }}' )">Unmute user</button>
+            </li>
+        {% endif %}
+    {% endfor %}
+{% else %}
+    <div>No users exist</div>
+{% endif %}
+</ul>
+
+<script src="/static/js/libs/socket.io.min.js"></script>
+<script>
+
+    function mute_chat(liElem, username) {
+        socket.emit("mute", username, "chat", (res) => {
+            if (res) {
+                //dynamically remove from list
+                var li_item = liElem.parentNode;
+                var li = li_item.parentNode;
+                li.removeChild(li_item);
+
+                //append to list
+                var new_li = document.getElementById("cant_chat");
+                new_li.append(li_item);
+            }
+            else {
+                alert("Failed to mute user");
+            }
+        })
+    }
+
+
+    function mute_post(username) {
+        socket.emit("mute", username, "post", (res) => {
+            if (res) {
+                //dynamically remove from list
+                var li_item = liElem.parentNode;
+                var li = li_item.parentNode;
+                li.removeChild(li_item);
+
+                //append to list
+                var new_li = document.getElementById("cant_post");
+                new_li.append(li_item);
+            }
+            else {
+                alert("Failed to mute user");
+            }
+        })
+    }
+
+    function unmute_chat(username) {
+        socket.emit("unmute", username, "chat" (res) => {
+            if (res) {
+                //dynamically remove from list
+                var li_item = liElem.parentNode;
+                var li = li_item.parentNode;
+                li.removeChild(li_item);
+
+                //append to list
+                var new_li = document.getElementById("can_chat");
+                new_li.append(li_item);
+            }
+            else {
+                alert("Failed to mute user");
+            }
+            
+        })
+    }
+
+    function unmute_post(username) {
+        socket.emit("unmute", username, "post" (res) => {
+            if (res) {
+                //dynamically remove from list
+                var li_item = liElem.parentNode;
+                var li = li_item.parentNode;
+                li.removeChild(li_item);
+
+                //append to list
+                var new_li = document.getElementById("can_chat");
+                new_li.append(li_item);
+            }
+            else {
+                alert("Failed to mute user");
+            }
+            
+        })
+    }
+</script>
 
 {% endblock %}

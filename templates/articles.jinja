@@ -149,8 +149,10 @@
     No articles posted yet
 </li> 
 {% endif %}
-
 </ul>
+
+
+
 
 <div class="popup" id="popup">
     <div class="article_box" id="article_box">
@@ -171,6 +173,29 @@
 <a href={{ url_for('new_article') }}>
     <button class="button" >New Article</button>
 </a>
+
+<!--User profile-->
+<div id="profile">
+    <h3>Profile</h3>
+    <div> {{ username }} </div> 
+    <div> {{ account }} 
+        {% if account == "staff" %}
+            {{ role }}
+        {% endif %}
+    </div>
+    <div id="perms"> Current permissions status: </div>
+        {% if can_chat %}
+            <div>Posting articles: allowed </div>
+        {% else %}
+            <div>Posting articles: muted </div>
+        {% endif %} 
+        
+        {% if can_post %} 
+            <div>Joining chatrooms: allowed </div>
+        {% else %}
+            <div>Joining chatrooms: muted </div>
+        {% endif %}
+</div>
 
 
 <script src="/static/js/libs/socket.io.min.js"></script>
@@ -220,7 +245,7 @@
         }
     }
 
-    function remove_article(liElem, id, call) {
+    function remove(liElem, id, call) {
         console.log(id)
 
         socket.emit(call, id, (success) => {
