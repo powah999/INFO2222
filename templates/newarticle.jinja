@@ -54,28 +54,35 @@
 
 </style>
 
+<ul class = "navbar">
+    <li><a href="{{ url_for('articles', username=username) }}">Home</a></li>
+    <li><a href=" {{ url_for('home', username=username) }}">Messages</a></li>
+    <li><a href="{{ url_for('new_article') }}">New Article</a></li>
+    {% if account == "staff" %}
+        <li><a href="{{ url_for('users') }}">User permissions</a></li> 
+    {% endif %}
+    <li class="right"><a class="active" href="{{ url_for('logout')}}">Sign Out</a></li>
+</ul>
 
 <div class="article_box" style="padding:20px;margin-top:50px;">
     <h1>Create a new article</h1>
     
     <form id="article">
         <p>Title:</p>
-            <input id="title" type="text" name="title" width="300px" />
+            <input id="title" type="text" name="title" width="500px" />
         <p>Content:</p>
             <input id="content" type="text" name="content" class="content-box"/>
-        <p>Upload attachement:</p>
+        <p>Upload attachment:</p>
             <input id="file" type="file" name="file"/>
+        <br/>
+        <br/>
+        <br/>
         <button class="button" type="submit">Post</button>
     </form>
 </div>
 
-
-<!-- message that comes up after user attempts to post a new article -->
-<button class="button" onclick="post()">Post</button>
-
 <div class="popup">    
-    <span class="popuptext" id="success">You've successfully posted a new article!</span>
-    <span class="popuptext" id="fail">You are currently not allowed to post any articles!</span>
+    <span class="popuptext" id="fail">Article failed to post!</span>
 </div>
 
 <script src="/static/js/libs/socket.io.min.js"></script>
@@ -83,48 +90,26 @@
     const article = document.getElementById("article");
     let url = '{{ url_for("upload") }}';
     
-    article.addEventListener("submit", (e) => {
+    article.addEventListener("submit", async function(e) {
         e.preventDefault();
 
         const formData = new FormData(article);
+        console.log([...formData]);
 
-        axios.post(url, formData)
-        .then(res => console.log(res + "success"))
-        .catch(err => console.log(err + "fail"))
+        try {
+            const res = await axios.post(url, formData)    
+            console.log(res);
+            console.log("success");    
+        }
+        catch(e) {
+            console.log(error);
+            popup = document.getElementById("fail"); 
+            popup.classList.toggle("show");
+        }
+
     });
 
-
-
-    const socket = io();
-    //create new post
-    function post() {
-        console.log("works");
         
-        let title = $("#title").val();
-        let content = $("#content").val();
-
-        socket.emit("new_post", title, content, (success) => {
-            console.log(success)
-            //successful post
-            
-            if (success) {
-                popup = document.getElementById("success");
-            }
-            else {
-                popup = document.getElementById("fail"); 
-            }
-
-            console.log(popup);
-
-            popup.classList.toggle("show");
-         });
-        
-
-        console.log(success);
-        
-    
-        
-    }
 
 </script>
 

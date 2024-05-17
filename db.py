@@ -310,10 +310,7 @@ def edit_article(article_id, new_title=None, new_content=None):
     with Session(engine) as session:  
         article = session.query(Article).filter_by(id=article_id).first()
    
-        if article:
-            print("Before: ")
-            print(article)
-            
+        if article and not (new_content == "" or new_title == ""):
             if new_title:
                 article.title = new_title
             if new_content:

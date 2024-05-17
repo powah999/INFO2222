@@ -63,17 +63,6 @@ Yeah I know it's pretty ugly...
     </head>
     <body>
         <!-- The content from any other page goes here -->
-    <!--Navbar code / links-->
-        <ul class = "navbar">
-            <li><a href="{{ url_for('articles') }}">Home</a></li>
-            <li><a href="#requests">Requests</a></li>
-            <li><a href=" {{ url_for('home') }}">Messages</a></li>
-            <li><a href="{{ url_for('new_article') }}">New Article</a></li>
-            <li><a href="#profile">User permissions</a></li> 
-            <li class="right"><a class="active" href="{{ url_for('logout')}}">Sign Out</a></li>
-        </ul>
-
-
         {% block content %} 
         {% endblock %}
     </body>

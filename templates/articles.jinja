@@ -84,6 +84,16 @@
 
 </style>
 
+<!--Navbar code / links-->
+<ul class = "navbar">
+    <li><a href="{{ url_for('articles', username=username) }}">Home</a></li>
+    <li><a href=" {{ url_for('home', username=username) }}">Messages</a></li>
+    <li><a href="{{ url_for('new_article') }}">New Article</a></li>
+    {% if account == "staff" %}
+        <li><a href="{{ url_for('users') }}">User permissions</a></li> 
+    {% endif %}
+    <li class="right"><a class="active" href="{{ url_for('logout')}}">Sign Out</a></li>
+</ul>
 
 
 <ul id="articles" style="padding:20px;margin-top:30px;list-style-type:none;">
@@ -102,7 +112,7 @@
         <p style="font-size: small" id="article_date"> {{ article.date }} </p>
         <p id="article_content" >{{ article.content }}</p> <br/>
         {% if article.file_name != '' %}
-            <a id="download" href="#">{{ article.file_name }} </a>
+            <a class="download" id="download" href="{{ url_for('send_file', filename=article.file_name)}}">{{ article.file_name }} </a>
         {% endif %}
         
         <!-- enable button if staff -->
@@ -114,34 +124,31 @@
         {% endif %}
         <br/>
 
-        <a href="javascript:toggle_comments()" id="hide_view" class="hide_view">View comments</a>
+        <a href="#" id="hide_view" class="hide_view">View comments</a>
 
-        <ul id="comment_section" class="comment_section" style="display:none;list-style-type:none;">
-        {% if article.comments %}
-            {% for comment in article.comments %}
-            <li id="comment" class="comment" style="font-size:small;">
-                <div> <b>{{ comment.author.username }}</b> {{ comment.author.account }} </div> 
-                {% if comment.author.account == 'staff' %}
-                    <div id="role" style="color:#969696;">{{ comment.author.staff_role }}</div>
-                {% endif %}
-                <div>{{ comment.date }}</div>
-                <p id="content">{{ comment.content }}</p> <br/>
-                {% if account == "staff" %}
-                    <button class="delete" onclick="remove(this, '{{ comment.id }}', 'delete_comment')">Delete</button>
-                {% endif %}
-            </li>
-            {% endfor %}
-        {% else %}
-        <li class="no_articles" id="no_articles">
-            No comments posted yet
-        </li>
-        {% endif %}
-        </ul>
-        <a href="javascript:toggle_comments()" id="show_view" class="show_view" style="display:none;">Hide comments <br/> </a> 
-
+        <ul id="comment_section" class="comment_section" style="display:none;list-style-type:none;">  
+            {% if article.comments %}
+                {% for comment in article.comments %}
+                <li id="comment" class="comment" style="font-size:small;">
+                    <div> <b>{{ comment.author.username }}</b> {{ comment.author.account }} </div> 
+                    {% if comment.author.account == 'staff' %}
+                        <div id="role" style="color:#969696;">{{ comment.author.staff_role }}</div>
+                    {% endif %}
+                    <div>{{ comment.date }}</div>
+                    <p id="content">{{ comment.content }}</p> <br/>
+                    {% if account == "staff" %}
+                        <button class="delete" onclick="remove(this, '{{ comment.id }}', 'delete_comment')">Delete</button>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            {% else %}
+            <li class="no_articles" id="no_articles">
+                No comments posted yet
+            </li>   
+            {% endif %}  
+        </ul>            
         <input style="margin:8px" id="add_comment" placeholder="Add a comment">
         <button id="comment_button" onclick="comment('{{ article.id }}')">Comment</button>
-
     </li>
     {% endfor %}
 {% else %}
@@ -150,9 +157,6 @@
 </li> 
 {% endif %}
 </ul>
-
-
-
 
 <div class="popup" id="popup">
     <div class="article_box" id="article_box">
@@ -177,10 +181,10 @@
 <!--User profile-->
 <div id="profile">
     <h3>Profile</h3>
-    <div> {{ username }} </div> 
-    <div> {{ account }} 
+    <div> Username: {{ username }} </div> 
+    <div> Account type: {{ account }} 
         {% if account == "staff" %}
-            {{ role }}
+            Staff role: {{ role }}
         {% endif %}
     </div>
     <div id="perms"> Current permissions status: </div>
@@ -189,7 +193,7 @@
         {% else %}
             <div>Posting articles: muted </div>
         {% endif %} 
-        
+
         {% if can_post %} 
             <div>Joining chatrooms: allowed </div>
         {% else %}
@@ -200,40 +204,35 @@
 
 <script src="/static/js/libs/socket.io.min.js"></script>
 <script>
+    let getFile = "{{ url_for('upload') }}";
     const socket = io();
     let username = "{{ username }}";
     let account = "{{ account }}";
     let role = "{{ role }}";
+   
+    window.onload = function() {
+        let articles = document.querySelectorAll(".article");
+        articles.forEach(function(li) {
+            let comments = li.querySelector(".comment_section");
+            let show_sign = li.querySelector(".hide_view");
 
-    article = document.getElementsByClassName("article");
-    article.forEach(function(elem) {
-        a = elem.querySelector("#download");
-        console.log(a.textContent);
-        if (a) {
-            file_name = a.textContent;
-            let getFile = "{{ url_for('upload') }}";
-            axios.get(getFile, {
-                file_name: file_name,
-                responseType:'blob',
-            })
-            .then((file) => {
-                const url = URL.createObjectURL(file.data);
-                a.href = url;
-                a.download = file_name;
-                console.log("success");
-            })
-            .catch((err) => {
-                console.log("fail");
-            })
-        }
-    });
-    
-    
-    function toggle_comments() {
-        comments = document.getElementById("comment_section");
-        show_sign= document.getElementById("hide_view");
-        hide_sign = document.getElementById("show_view");
+            show_sign.addEventListener("click", function(event) {
+                // Prevent default behavior of the link
+                event.preventDefault();
 
+                // Toggle the visibility of the extra content
+                if (comments.style.display === "none") {
+                    comments.style.display = "block";
+                    this.textContent = "Hide comments";
+                } else {
+                    extraContent.style.display = "none";
+                    this.textContent = "View comments";
+                }
+            });
+        });
+    }
+       
+    function toggle_comments(show_sign, hide_sign, comments) {
         if (comments.style.display === "none") {
             comments.style.display = "block";
             show_sign.style.display = "none";
@@ -246,7 +245,7 @@
     }
 
     function remove(liElem, id, call) {
-        console.log(id)
+        console.log(id);
 
         socket.emit(call, id, (success) => {
             if (typeof success == "string") {
@@ -259,14 +258,12 @@
                 var ul = li_item.parentNode;
                 ul.removeChild(li_item);
 
-                if (call === "delete_article" and ul.length === 0) {
+                if (call === "delete_article" && ul.length == 0) {
                     none = document.getElementById("no_articles");
                     none.style.display = "block";
                 }
             }
         }); 
-
-        
     }
 
 

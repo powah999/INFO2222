@@ -59,7 +59,7 @@ def comparestrings(string_a, string_b):
 # index page
 @app.route("/")
 def index():
-    return render_template("index.jinja")
+    return render_template("login.jinja")
 
 # login page
 @app.route("/login")
@@ -235,7 +235,6 @@ def page_not_found(_):
 # messages page
 @app.route("/home")
 def home():
-    """
     username = request.args.get("username")
 
     if request.args.get("username") is None:
@@ -251,7 +250,7 @@ def home():
     # uncomment once final
     # if session.get('username') not in session_tokens.keys() or (session.get('token') != session_tokens.get(session.get('username'))):
     #     return redirect(url_for('login'))    
-    """
+
     username = session.get("username")
     friends = db.get_friends(username)
     
@@ -271,7 +270,15 @@ def home():
         else:
             friend_roles[friend.username] = account
 
-    return render_template("home.jinja", username=username, friends=friends, received=db.get_received(username), pending=db.get_sent(username), friend_status=friend_status, friend_roles=friend_roles)
+    return render_template("home.jinja", 
+                           username=username, 
+                           friends=friends, 
+                           received=db.get_received(username), 
+                           pending=db.get_sent(username), 
+                           friend_status=friend_status, 
+                           friend_roles=friend_roles,
+                           account = db.get_user(username).account
+                           )
 
 
 #home page, contains all posts
@@ -281,15 +288,15 @@ def articles():
 
     if request.args.get("username") is None:
         abort(404)
-    
+        
     if 'username' not in session or ('token' not in session):
         print('\nusername or token not in session\n')
         return redirect(url_for('login'))
 
     if session.get('username') != username:
         print('\n your session is not equal to the users actual session\n')
-        return redirect(url_for('login'))    
-    
+        return redirect(url_for('login'))
+
     friends = db.get_friends(username)
     
     friend_status = {}
@@ -322,13 +329,19 @@ def articles():
 @app.route("/navbar")
 def navbar():
     articles = db.get_all_articles()
+    user = db.get_user(session['username'])
 
-    return render_template("navbar.jinja", articles=articles)
+    return render_template("navbar.jinja", username=session["username"], articles=articles, account=user.account)
 
 @app.route("/newarticle")
 def new_article():
+    user = db.get_user(session["username"])
 
-    return render_template("newarticle.jinja")
+    if user.can_post:
+        return render_template("newarticle.jinja", username=session["username"])
+    
+    print("User cannot make posts")
+    return "User cannot make posts"
 
 
 @app.route("/logout")
@@ -343,46 +356,42 @@ def logout():
     return redirect(url_for("login"))
 
 
-@app.route("/upload", methods=["POST", "GET"])
+@app.route("/upload", methods=["POST"])
 def upload(file_name=None):
     if request.method == "POST":
         title = request.form.get('title')
         content = request.form.get('content')
         file = request.files.get('file')
 
+        user = db.get_user(session.get("username"))
+
         if not title or not content:
             return "Failed to upload"
         
         if file and file.filename != '':
-            file.save(os.path.join(app.config['UPLOAD_PATH'], file.filename))
-            file_name = os.path.join(app.config['UPLOAD_PATH'], file.filename)
+            file_name = f"{user.id}_{file.filename}"
+            file.save(os.path.join(app.config['UPLOAD_PATH'], file_name))
+        elif file.filename == "":
+            print("no file was uploaded")
+            file_name = ""
         else:
             return "Failed to upload file"
     
-        if not db.create_article(username=session["username"], title=title, content=content, file_name=file_name):
-            return redirect(url_for('new_article'))
-
-        return redirect(url_for('articles'))
-    else:
-        file_name = request.args.get("file_name")
-        if file_name:
-            return url_for(send_file(file_name))
+        if not db.create_article(username=user.username, title=title, content=content, file_name=file_name):
+            return "Could not create new article"
         
-        print("File name doesn't exist")
-        return "File name doesn't exist"
-
+        return redirect(url_for("articles", username=session["username"]))
 
 @app.route('/upload/<filename>')
 def send_file(filename):
-    return send_from_directory(app.config['UPLOAD_PATH'], filename)
-
+    return send_from_directory(app.config['UPLOAD_PATH'], filename, as_attachment=True)
 
 @app.route('/users')
 def users():
-    user = session.get("username")
+    user = db.get_user(session.get("username"))
 
     if user.account == "staff":
-        return render_template("users.jinja", users=db.get_all_users)
+        return render_template("users.jinja", username = session["username"], account=user.account)
 
     return "Students are not authorised to this page"
 

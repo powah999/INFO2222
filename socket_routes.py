@@ -379,20 +379,6 @@ def decline(sender_name):
         emit("check_declined_requests", (receiver_name), to=session_ids.get(sender_name))
         return 0
 
-@socketio.on("new_post")
-def new_post(title, content):
-    print(title)
-    print(content)
-    print(session["username"])
-
-    if not title or not content:
-        return False
- 
-    if not db.create_article(username=session["username"], title=title, content=content):
-        return False
-    
-    return True
-
 @socketio.on("delete_article")
 def delete_article(article_id):
     user = db.get_user(username=session["username"])
