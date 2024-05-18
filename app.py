@@ -357,30 +357,63 @@ def logout():
 
 
 @app.route("/upload", methods=["POST"])
-def upload(file_name=None):
-    if request.method == "POST":
-        title = request.form.get('title')
-        content = request.form.get('content')
-        file = request.files.get('file')
+def upload():
+    title = request.form.get('title')
+    content = request.form.get('content')
+    file = request.files.get('file')
 
-        user = db.get_user(session.get("username"))
+    user = db.get_user(session["username"])
 
-        if not title or not content:
-            return "Failed to upload"
-        
-        if file and file.filename != '':
-            file_name = f"{user.id}_{file.filename}"
-            file.save(os.path.join(app.config['UPLOAD_PATH'], file_name))
-        elif file.filename == "":
-            print("no file was uploaded")
-            file_name = ""
-        else:
-            return "Failed to upload file"
+    if not title or not content:
+        return "Failed to upload"
     
-        if not db.create_article(username=user.username, title=title, content=content, file_name=file_name):
-            return "Could not create new article"
+    if title == "" or content == "":
+        return "Cannot have empty text fields"
         
-        return redirect(url_for("articles", username=session["username"]))
+    if file and file.filename != '':
+        file_name = f"{user.id}_{file.filename}"
+        file.save(os.path.join(app.config['UPLOAD_PATH'], file_name))
+    elif file.filename == "":
+        print("no file was uploaded")
+        file_name = ""
+    else:
+        return "Failed to upload file"
+    
+    if not db.create_article(username=session.get("username"), title=title, content=content, file_name=file_name):
+        return "Could not create new article"
+        
+    return redirect(url_for("articles", username=session["username"]))
+
+@app.route("/reupload", methods=["POST"])
+def reupload():
+    title = request.form.get('title')
+    content = request.form.get('content')
+    file = request.files.get('file')
+    article_id = request.form.get("article_id")
+
+    user = db.get_user(session.get("username"))
+
+    if (not title and not content) or not article_id:
+        return "Fail"
+    
+    if title == "" or content == "" or article_id == "":
+        return "Fail"
+        
+    if file and file.filename != '':
+        file_name = f"{user.id}_{file.filename}"
+        file.save(os.path.join(app.config['UPLOAD_PATH'], file_name))
+    elif file.filename == "":
+        print("no file was uploaded")
+        file_name = ""
+    else:
+        return "Fail"
+    
+    success = db.edit_article(article_id=article_id, new_title=title, new_content=content, file_name=file_name)
+    if not success:
+        return "Fail"
+        #return "Could not edit article"
+    return success
+    
 
 @app.route('/upload/<filename>')
 def send_file(filename):

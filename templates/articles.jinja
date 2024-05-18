@@ -44,22 +44,29 @@
         padding: 20px;
         }
     
-    .re_post {
-        background-color: #b0abd2; 
-        border: none;
-        color: #1b1b1b;
-        padding: 12px;
-        text-align: center;
-        text-decoration: none;
-        font-size: 14px;
-        margin: 4px 2px;
-        cursor: pointer;
+    #re_post {
         position: absolute;
         bottom: 5px;
         right: 20px;
         }
 
-    .re_post:hover {
+    .close {
+        background-color: #b0abd2; 
+        border: none;
+        color: #1b1b1b;
+        padding: 5px 5px 5px 5px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 14px;
+        cursor: pointer;
+        position: absolute;
+        border-radius: 4px;    
+        top: 5px; 
+        right: 10px;
+    }
+
+    .close:hover {
         background-color: #9d83fa;
     }
         
@@ -160,18 +167,24 @@
 
 <div class="popup" id="popup">
     <div class="article_box" id="article_box">
+        <button id="close" class="close" >
+        &times;
+        </button>
         <h1>Edit Article</h1>
+        
+        <form id="reupload">
             <p>Title:</p>
-                <input id="title" width="500px" />
+                <input id="title" type="text" name="title" width="500px" />
             <p>Content:</p>
-                <input id="content" class="content-box"/>
+                <input id="content" type="text" name="content" class="content-box"/>
+            <p>Upload attachment:</p>
+                <input id="file" type="file" name="file"/>
             <br/>
             <br/>
             <br/>
-            <button class="re_post" id="re_post">Re-post</button>
-            
-    </div>
-    
+            <button class="button" id="re_post" type="submit">Re-post</button>
+        </form>   
+    </div> 
 </div>
 
 <a href={{ url_for('new_article') }}>
@@ -231,6 +244,12 @@
             });
         });
     }
+
+    var close_button = document.getElementById("close");
+    close_button.addEventListener("click", function() {
+        this.parentElement.style.display = 'none'; 
+        location.reload();
+    });
        
     function toggle_comments(show_sign, hide_sign, comments) {
         if (comments.style.display === "none") {
@@ -276,10 +295,61 @@
 
         popup.classList.toggle("show");
 
-        var repost_button = document.getElementById('re_post');
+       // let repost_button = document.getElementById("re_post");
+        let url = '{{ url_for("reupload") }}';
+        let article = document.getElementById("reupload");
+        
+        article.addEventListener("submit", async function(e) {
+            e.preventDefault();
+
+            let formData = new FormData(article);
+            formData.append("article_id", id);
+            console.log([...formData]);
+
+            try {
+                let res = await axios.post(url, formData)    
+                console.log(res);
+                console.log("success");    
+
+                if (res.data != "Fail") {
+                    let title = document.getElementById("title").value;
+                    let content = document.getElementById("content").value;
+
+                    var parent = liElem.parentNode;
+                    var new_article = parent.cloneNode(true);
+                        
+                    var date = new_article.querySelector("#article_date");
+                    date.textContent = res;
+                        
+                    var old_title = new_article.querySelector("#article_title");
+                    old_title.textContent = title;
+                        
+                    var old_content = new_article.querySelector("#article_content");  
+                    old_content.textContent = content;
+
+                    var all_articles = parent.parentNode;
+                    all_articles.replaceChild(new_article, parent);
+                }
+                else {
+                   alert("Could not update article"); 
+                }  
+            } 
+            catch(e) {
+                console.log(e);
+                alert("Could not update article");
+            }
+
+            popup = document.getElementById('article_box');
+            popup.classList.toggle("hide");
+            location.reload();
+        });
+
+        /* 
+
         repost_button.onclick = function () {
             re_post(liElem, old_title, old_content, id);
         };
+        */
     }
 
     //update post

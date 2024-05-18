@@ -306,25 +306,23 @@ def delete_article(article_id):
         return False
 
 #edit article
-def edit_article(article_id, new_title=None, new_content=None):
+def edit_article(article_id, new_title, new_content, file_name=""):
     with Session(engine) as session:  
         article = session.query(Article).filter_by(id=article_id).first()
    
         if article and not (new_content == "" or new_title == ""):
-            if new_title:
-                article.title = new_title
-            if new_content:
-                article.content = new_content
+            article.title = new_title
+            article.content = new_content
+            
+            if file_name != "":
+                article.file_name = file_name
             
             article.date = datetime.today().strftime("%d %B, %Y")
-            
-            print("After: ")
-            print(article)
-            
+
             session.commit()
             return article.date
     
-        return False
+        return "Fail"
 
 #make comment on article
 def add_comment(article_id, username, content):
