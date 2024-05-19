@@ -141,7 +141,8 @@
     </div>
     <div class="column middle">
         <ul id="articles" class="top" >
-        <h1>Home</h1>
+        <h1>Welcome back {{username}}!</h1>
+        <h2>Articles</h2>
         <br/>
         {% if articles %}
             {% for article in articles %}
@@ -184,11 +185,7 @@
                                 <button id="delete_comment" class="delete" onclick="remove(this, '{{ comment.id }}', 'delete_comment')">Delete</button>
                             {% endif %}
                         </li>
-                        {% endfor %}
-                    {% else %}
-                        <li class="no_comments" id="no_comments">
-                            No comments posted yet
-                        </li>   
+                        {% endfor %} 
                     {% endif %}  
                 </ul>            
                 <input style="margin:8px" id="add_comment" placeholder="Add a comment">
@@ -269,8 +266,9 @@
 
         articles.forEach(function(li) {
            // console.log(li.textContent);
-            let comments = li.querySelector(".comment_section");
-            let show_sign = li.querySelector("a.hide_view");
+            var comments = li.querySelector(".comment_section");
+            var show_sign = li.querySelector("a.hide_view");
+            let none = comments.querySelector("li.no_comments");
             console.log(show_sign.textContent);
 
             show_sign.addEventListener("click", function(event) {
@@ -281,6 +279,10 @@
                 if (comments.style.display === "none") {
                     comments.style.display = "block";
                     this.textContent = "Hide comments";
+
+                    var all_comments = comments.querySelectorAll("li.comment");
+                    console.log(all_comments.length);
+                    
                 } else {
                     comments.style.display = "none";
                     this.textContent = "View comments";
@@ -372,12 +374,6 @@
             location.reload();
         });
 
-        /* 
-
-        repost_button.onclick = function () {
-            re_post(liElem, old_title, old_content, id);
-        };
-        */
     }
 
     //update post

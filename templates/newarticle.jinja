@@ -4,8 +4,8 @@
 {% block content %}
 <style>
     .content-box {
-        width: 300px;
-        height: 50px;
+        width: 500px;
+        height: 200px;
     }
 
     .popup {
@@ -24,11 +24,11 @@
         text-decoration: none;
         display: inline-block;
         font-size: 14px;
-        margin: 4px 2px;
         cursor: pointer;
         position: static;
-        bottom: 16px;
-        right: 12px;
+        bottom: 5px;
+        right: 10px;
+        margin-top: 10px;
         border-radius: 4px;
     }
     
@@ -52,6 +52,24 @@
         visibility: visible;
         }
 
+    .article_box {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 20px;
+        margin-top:30px;
+        }
+
+    .article {
+        box-shadow: rgba(50, 50, 93, 0.25) 0px 2px 5px -1px, rgba(0, 0, 0, 0.3) 0px 1px 3px -1px;
+        padding-left: 10px;
+        padding-right: 10px;
+        padding-bottom: 5px;
+        padding-top: 5px;
+    }
+    
+
 </style>
 
 <ul class = "navbar">
@@ -64,18 +82,16 @@
     <li class="right"><a class="active" href="{{ url_for('logout')}}">Sign Out</a></li>
 </ul>
 
-<div class="article_box" style="padding:20px;margin-top:50px;">
+<div class="article_box">
     <h1>Create a new article</h1>
     
-    <form id="article">
+    <form class="article" id="article">
         <p>Title:</p>
-            <input id="title" type="text" name="title" width="500px" />
+            <input id="title" type="text" name="title" style="width:500px;" />
         <p>Content:</p>
-            <input id="content" type="text" name="content" class="content-box"/>
+            <textarea id="content" form="article" name="content" class="content-box"></textarea>
         <p>Upload attachment:</p>
             <input id="file" type="file" name="file"/>
-        <br/>
-        <br/>
         <br/>
         <button class="button" type="submit">Post</button>
     </form>
