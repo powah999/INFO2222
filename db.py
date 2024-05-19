@@ -21,10 +21,27 @@ Base.metadata.create_all(engine)
 # inserts a user to the database
 def insert_user(username: str, hashed_password: str, salt: str, salt2: str, account: str, staff_role='N/A'):
     with Session(engine) as session:
-        user = User(username=username, password=hashed_password, salt=salt, salt2=salt2, account=account, staff_role=staff_role)
+        user = User(username=username, password=hashed_password, salt=salt, salt2=salt2, account=account, staff_role=staff_role, groups = json.dumps([]))
         session.add(user)
         session.commit()
         return 0
+    
+def add_group_to_user(username: str, groupname: str):
+    with Session(engine) as session:
+        user = session.query(User).filter_by(username=username).first()
+        if user:
+            groups = json.loads(user.groups)
+            groups.append(groupname)
+            user.groups = json.dumps(groups)
+            session.commit()
+            return 0
+        
+def get_groups(username: str):
+    with Session(engine) as session:
+        user = session.query(User).filter_by(username=username).first()
+        if user:
+            return json.loads(user.groups)
+        return -1
     
 def create_history(sender: str, receiver:str, listh: list[list[str]]):
     with Session(engine) as session:
@@ -40,6 +57,45 @@ def create_history(sender: str, receiver:str, listh: list[list[str]]):
         else:
             history = History(sender=sender, receiver=receiver)
             return 0 
+
+def create_history_group(groupname: str, listh: list[list[str]], friendlist: list[str]):
+    with Session(engine) as session:
+        group_history = session.query(GroupHistory).filter(GroupHistory.groupname == groupname).first()
+
+        if group_history:
+            return -1
+        else:
+            group_history = GroupHistory(groupname=groupname, history=json.dumps(listh), members=json.dumps(friendlist))
+            session.add(group_history)
+            session.commit()
+            print("Group name: " + groupname)
+            return 0
+        
+def insert_history_group(groupname: str, history_list: list[list[str]]):
+    with Session(engine) as session:
+        group_history = session.query(GroupHistory).filter(GroupHistory.groupname == groupname).first()
+        if group_history:
+            old_history = json.loads(group_history.history)
+            if type(history_list) != list:
+                return -1
+            if old_history == None:
+                old_history = []
+            for message in history_list:
+                old_history.append(message)
+            group_history.history = json.dumps(old_history)
+            session.commit()
+            return 0
+        
+        return -1
+
+def get_history_group(groupname: str):
+    with Session(engine) as session:
+        group_history = session.query(GroupHistory).filter(GroupHistory.groupname == groupname).first()
+        if group_history:
+            return json.loads(group_history.history)
+        
+        return -1
+    
 
 
 def insert_history(sender: str, receiver:str, history_list: list[list[str]]):
