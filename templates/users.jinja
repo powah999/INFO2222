@@ -175,26 +175,27 @@
             if (res) {
                 //dynamically remove from list
                 var li_item = liElem.parentNode;
-                var text = li_item.textContent;
+                var new_item = li_item.cloneNode(true);
 
                 var li = li_item.parentNode;
                 li.removeChild(li_item);
 
                 //append to list
-                var new_li = document.getElementById("cant_chat");
-                var new_item = document.createElement("li");
+                var ul = document.getElementById("cant_chat");
                 var button = document.createElement("button");
                 
-                new_item.textContent = text;
-                
+                var b = new_item.querySelector("button");
+                new_item.removeChild(b);
+                new_item.id="cant_chat";
+
                 button.id= "unmute_chat";
                 button.textContent="Unmute user";
-                button.onclick = function(e) {
-                    unmute_chat(e, username);
-                };
-                new_item.append(button);
+                button.addEventListener("click" , function() {
+                    unmute_chat(this, username);
+                });
+                new_item.appendChild(button);
                 
-                new_li.append(li_item);
+                ul.appendChild(bew_item);
             }
             else {
                 alert("Failed to mute user");
@@ -242,26 +243,27 @@
             if (res) {
                 //dynamically remove from list
                 var li_item = liElem.parentNode;
-                var text = li_item.innerHTML;
+                var new_item = li_item.cloneNode(true);
 
                 var li = li_item.parentNode;
                 li.removeChild(li_item);
 
                 //append to list
-                var new_li = document.getElementById("can_chat");
-                var new_item = document.createElement("li");
+                var ul = document.getElementById("can_chat");
+                var b = new_item.querySelector("button");
+                
+                new_item.removeChild(b);
+                new_item.id="can_chat";
+                
                 var button = document.createElement("button");
-                
-                new_item.innerHTML = text;
-                
                 button.id= "mute_chat";
                 button.textContent="Mute user";
-                button.onclick = function(e) {
-                    unmute_chat(e, username);
-                };
-                new_item.append(button);
+                button.addEventListener("click" , function() {
+                    mute_chat(this, username);
+                });
+                new_item.appendChild(button);
                 
-                new_li.append(new_item);
+                ul.appendChild(new_item);
             }
             else {
                 alert("Failed to unmute user");
