@@ -56,6 +56,20 @@
         .navbar_tabs li.right, 
         .navbar_tabs li {float:none;}
         }
+    
+
+    .user {
+        box-shadow: rgba(50, 50, 93, 0.25) 0px 2px 5px -1px, rgba(0, 0, 0, 0.3) 0px 1px 3px -1px;
+        padding-left: 10px;
+        padding-right: 10px;
+        padding-bottom: 5px;
+        padding-top: 5px;
+    }
+
+    .button {  
+        margin-bottom: 5px;
+        margin-top: 5px;
+    }
 
 </style>
 
@@ -69,150 +83,226 @@
     <li class="right"><a class="active" href="{{ url_for('logout')}}">Sign Out</a></li>
 </ul>
 
-<h1>User permissions</h1>
-<ul id="posting" style="padding:20px;margin-top:30px;list-style-type:none;">
+<h1 style="padding:20px;margin-top:30px;">User permissions</h1>
+
+<div id="posting">
 <h2>Posting articles:</h2>
-<br/>
+
+<ul id="can_post" style="list-style-type:none;">
 <h3>Authorised users:</h3>
 {% if users %}
     {% for user in users %}
-        {% if user.can_post %}
-            <li id="user_post" class="post">
-                <h4>Name: {{user.username}} </h4>
-                {% if user.account == "staff" %}
-                <h5>Account type: <b> {{user.account}} </b> {{user.role}} </h5>
-                {% else %}
-                <h5>Account type: <b> {{user.account}} </h5>
-                <button id="mute_post" onclick="mute_post( '{{ user.username }}' )">Mute user</button>
-            </li>
-        {% else %}
-<h3>Muted users:</h3>
-            <li id="cant_post" class="cant_post">
-                <h4>Name: {{user.username}} </h4>
-                {% if user.account == "staff" %}
-                <h5>Account type: <b> {{user.account}} </b> {{user.role}} </h5>
-                {% else %}
-                <h5>Account type: <b> {{user.account}} </h5>
-                {% endif %}
-                <button id="unmute_post" onclick="unmute_post( '{{ user.username }}' )">Unmute user</button>
+        {% if user.username != username and user.can_post %}
+            <li id="user_post" class="user">
+                <div id="username"> <b>Username: </b> {{ user.username }} </div> 
+                <div> <b>Account type:</b> {{ user.account }}   </div>
+                    {% if user.account == "staff" %}
+                        <div style="font-size:small;text-indent:10px;"><u>Staff role</u>: <i>{{ user.staff_role }}</i></div>
+                    {% endif %}
+                <button class="button" id="mute_post" onclick="mute_post(this, '{{ user.username }}' )">Mute user</button>
             </li>
         {% endif %}
     {% endfor %}
-{% else %}
-    <div>No users exist</div>
 {% endif %}
 </ul>
 
-<ul id="chatting" style="padding:20px;margin-top:30px;list-style-type:none;">
-<h2>Joining chatrooms:</h2>
-<br/>
-<h3>Authorised users:</h3>
+<ul id="cant_post" style="list-style-type:none;">
+<h3>Muted users:</h3>
 {% if users %}
     {% for user in users %}
-        {% if user.can_chat %}
-            <li id="can_chat" class="can_chat">
-                <h4>Name: {{user.username}} </h4>
-                {% if user.account == "staff" %}
-                    <h5>Account type: <b> {{user.account}} </b> {{user.role}} </h5>
-                {% else %}
-                    <h5>Account type: <b> {{user.account}} </h5>
-                {% endif %}
-                <button id="mute_chat" onclick="mute_chat(this, '{{ user.username }}' )">Mute user</button>
-            </li>
-<h3>Muted users:</h3>
-        {% else %}
-            <li id="cant_chat" class="cant_chat">
-                <h4>Name: {{user.username}} </h4>
-                {% if user.account == "staff" %}
-                    <h5>Account type: <b> {{user.account}} </b> {{user.role}} </h5>
-                {% else %}
-                    <h5>Account type: <b> {{user.account}} </h5>
-                {% endif %}
-                <button id="unmute_chat" onclick="unmute_chat( '{{ user.username }}' )">Unmute user</button>
+        {% if user.username != username and not user.can_post %}
+            <li id="cant_post" class="user">
+                <div> <b>Username: </b> {{ user.username }} </div> 
+                <div> <b>Account type:</b> {{ user.account }}   </div>
+                    {% if user.account == "staff" %}
+                        <div style="font-size:small;text-indent:10px;"><u>Staff role</u>: <i>{{ user.staff_role }}</i></div>
+                    {% endif %}
+                <button class="button" id="unmute_post" onclick="unmute_post(this, '{{ user.username }}' )">Unmute user</button>
             </li>
         {% endif %}
     {% endfor %}
-{% else %}
-    <div>No users exist</div>
 {% endif %}
 </ul>
+</div>
+
+
+<div id="chatting">
+<h2>Joining chatrooms:</h2>
+
+<ul id="can_chat" style="list-style-type:none;">
+<h3>Authorised users:</h3>
+{% if users %}
+    {% for user in users %}
+        {% if user.username != username and user.can_message %}
+            <li id="can_chat" class="user">
+                <div><b>Username: </b> {{ user.username }}</div> 
+                <div> <b>Account type: </b> {{ user.account }}  </div>
+                    {% if user.account == "staff" %}
+                        <div style="font-size:small;text-indent:10px;"><u>Staff role</u>: <i>{{ user.staff_role }}</i></div>
+                    {% endif %}
+                <button class="button" id="mute_chat" onclick="mute_chat(this, '{{ user.username }}' )">Mute user</button>
+            </li>
+        {% endif %}
+    {% endfor %}
+{% endif %}
+</ul>
+
+<ul id="cant_chat" style="list-style-type:none;">
+<h3>Muted users:</h3>
+{% if users %}
+    {% for user in users %}
+        {% if user.username != username and not user.can_message %}
+            <li id="cant_chat" class="user">
+                <div><b>Username: </b> {{ user.username }}</div> 
+                <div> <b>Account type: </b> {{ user.account }}  </div>
+                    {% if user.account == "staff" %}
+                        <div style="font-size:small;text-indent:10px;"><u>Staff role</u>: <i>{{ user.staff_role }}</i></div>
+                    {% endif %}
+                <button id="unmute_chat" onclick="unmute_chat(this, '{{ user.username }}' )">Unmute user</button>
+            </li>
+        {% endif %}
+    {% endfor %}
+{% endif %}
+</ul>
+</div>
 
 <script src="/static/js/libs/socket.io.min.js"></script>
 <script>
-
+    const socket = io();
     function mute_chat(liElem, username) {
         socket.emit("mute", username, "chat", (res) => {
+            console.log(res);
             if (res) {
                 //dynamically remove from list
                 var li_item = liElem.parentNode;
+                var text = li_item.textContent;
+
                 var li = li_item.parentNode;
                 li.removeChild(li_item);
 
                 //append to list
                 var new_li = document.getElementById("cant_chat");
+                var new_item = document.createElement("li");
+                var button = document.createElement("button");
+                
+                new_item.textContent = text;
+                
+                button.id= "unmute_chat";
+                button.textContent="Unmute user";
+                button.onclick = function(e) {
+                    unmute_chat(e, username);
+                };
+                new_item.append(button);
+                
                 new_li.append(li_item);
             }
             else {
                 alert("Failed to mute user");
             }
-        })
+        });
     }
 
 
-    function mute_post(username) {
+    function mute_post(liElem, username) {
         socket.emit("mute", username, "post", (res) => {
             if (res) {
                 //dynamically remove from list
                 var li_item = liElem.parentNode;
+                var new_item = li_item.cloneNode(true);
+                
                 var li = li_item.parentNode;
                 li.removeChild(li_item);
 
                 //append to list
-                var new_li = document.getElementById("cant_post");
-                new_li.append(li_item);
+                var ul = document.getElementById("cant_post");
+                var button = document.createElement("button");
+
+                var b = new_item.querySelector("button");
+                new_item.removeChild(b);
+                new_item.id="cant_post";
+                
+                button.id= "unmute_post";
+                button.textContent="Unmute user";
+                button.addEventListener("click" , function() {
+                    unmute_post(this, username);
+                });
+                new_item.appendChild(button);
+ 
+                ul.appendChild(new_item);
+
             }
             else {
                 alert("Failed to mute user");
             }
-        })
+        });
     }
 
-    function unmute_chat(username) {
-        socket.emit("unmute", username, "chat" (res) => {
+    function unmute_chat(liElem, username) {
+        socket.emit("unmute", username, "chat", (res) => {
             if (res) {
                 //dynamically remove from list
                 var li_item = liElem.parentNode;
+                var text = li_item.innerHTML;
+
                 var li = li_item.parentNode;
                 li.removeChild(li_item);
 
                 //append to list
                 var new_li = document.getElementById("can_chat");
-                new_li.append(li_item);
+                var new_item = document.createElement("li");
+                var button = document.createElement("button");
+                
+                new_item.innerHTML = text;
+                
+                button.id= "mute_chat";
+                button.textContent="Mute user";
+                button.onclick = function(e) {
+                    unmute_chat(e, username);
+                };
+                new_item.append(button);
+                
+                new_li.append(new_item);
             }
             else {
-                alert("Failed to mute user");
+                alert("Failed to unmute user");
             }
             
-        })
+        });
     }
 
-    function unmute_post(username) {
-        socket.emit("unmute", username, "post" (res) => {
+    function unmute_post(liElem, username) {
+        socket.emit("unmute", username, "post", (res) => {
             if (res) {
                 //dynamically remove from list
                 var li_item = liElem.parentNode;
+                var new_item = li_item.cloneNode(true);
+
                 var li = li_item.parentNode;
                 li.removeChild(li_item);
 
                 //append to list
-                var new_li = document.getElementById("can_chat");
-                new_li.append(li_item);
+                var ul = document.getElementById("can_post");                
+                var b = new_item.querySelector("button");
+               
+                new_item.removeChild(b);
+                new_item.id="can_post";
+                
+                var button = document.createElement("button");
+                button.id= "mute_post";
+                button.textContent="Mute user";
+                button.addEventListener("click" , function() {
+                    mute_post(this, username);
+                });
+                new_item.appendChild(button);
+                
+                ul.appendChild(new_item);
+
             }
             else {
-                alert("Failed to mute user");
+                alert("Failed to unmute user");
             }
             
-        })
+        });
     }
 </script>
 

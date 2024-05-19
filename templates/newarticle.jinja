@@ -98,11 +98,14 @@
 
         try {
             const res = await axios.post(url, formData)    
-            console.log(res);
+            //console.log(res);
             console.log("success");   
-            if (typeof res.data == "string") {
-                alert(res.data);
+            if (res.data == "Fail") {
+                alert("Failed to upload article");
                 location.reload();
+            }
+            else {
+                window.open(res.data, "_self")
             }
         }
         catch(e) {

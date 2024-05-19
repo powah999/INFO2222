@@ -3,6 +3,24 @@
 
 {% block content %}
 <style>
+    .column {
+        float: left;
+    }
+
+    .left, .right {
+        width: 25%;
+    }
+
+    .middle {
+        width: 50%;
+    }
+
+    .row:after {
+        content: "";
+        display: table;
+        clear: both;
+    }
+
     .button {
         background-color: #b0abd2; 
         border: none;
@@ -27,6 +45,8 @@
     .article {
         box-shadow: rgba(50, 50, 93, 0.25) 0px 2px 5px -1px, rgba(0, 0, 0, 0.3) 0px 1px 3px -1px;
         padding-left: 10px;
+        padding-right: 10px;
+        padding-bottom: 5px;
         padding-top: 5px;
     }
 
@@ -89,6 +109,19 @@
         height: 200px; 
     }
 
+    .top {
+        padding:20px;
+        margin-top:30px;
+        list-style-type:none;
+    }
+
+    #account {
+        padding-bottom: 5%;
+        padding-top: 5%;
+        padding-right: 10px;
+        padding-left: 10px;
+    }
+
 </style>
 
 <!--Navbar code / links-->
@@ -102,76 +135,106 @@
     <li class="right"><a class="active" href="{{ url_for('logout')}}">Sign Out</a></li>
 </ul>
 
-
-<ul id="articles" style="padding:20px;margin-top:30px;list-style-type:none;">
-<h1>Home</h1>
-<br/>
-{% if articles %}
-    {% for article in articles %}
-    <li id="article" class="article">
-        <h2 class="title" id="article_title">{{ article.title }}</h2>
-        {{ article.author.username }} <br/>
-        <small> <b>{{ article.author.account }}</b>
-        {% if article.author.account == 'staff' %}
-            {{ article.author.staff_role }}
-        {% endif %}
-        </small> <br/>
-        <p style="font-size: small" id="article_date"> {{ article.date }} </p>
-        <p id="article_content" >{{ article.content }}</p> <br/>
-        {% if article.file_name != '' %}
-            <a class="download" id="download" href="{{ url_for('send_file', filename=article.file_name)}}">{{ article.file_name }} </a>
-        {% endif %}
-        
-        <!-- enable button if staff -->
-        {% if account == "staff" %}
-            <button class="delete" onclick="remove(this, '{{ article.id }}', 'delete_article')">Delete</button>
-            <button class="edit" id="edit" onclick="edit(this, '{{ article.title }}', '{{ article.content }}', '{{ article.id }}')">Edit</button>
-        {% elif article.author.username == username and can_post %}
-            <button class="edit" id ="edit" onclick="edit(this, '{{ article.title }}', '{{ article.content }}', '{{ article.id }}')">Edit</button>   
-        {% endif %}
+<div class="row">
+    <div class="column left">
         <br/>
+    </div>
+    <div class="column middle">
+        <ul id="articles" class="top" >
+        <h1>Home</h1>
+        <br/>
+        {% if articles %}
+            {% for article in articles %}
+            <li id="article" class="article">
+                <h2 class="title" id="article_title">{{ article.title }}</h2>
+                {{ article.author.username }} <br/>
+                <small> <b>{{ article.author.account }}</b>
+                {% if article.author.account == 'staff' %}
+                    {{ article.author.staff_role }}
+                {% endif %}
+                </small> <br/>
+                <p style="font-size: small" id="article_date"> {{ article.date }} </p>
+                <p id="article_content" >{{ article.content }}</p> <br/>
+                {% if article.file_name != '' %}
+                    <a class="download" id="download" href="{{ url_for('send_file', filename=article.file_name)}}">{{ article.file_name }} </a>
+                {% endif %}
+                
+                <!-- enable button if staff -->
+                {% if account == "staff" %}
+                    <button class="delete" onclick="remove(this, '{{ article.id }}', 'delete_article')">Delete</button>
+                    <button class="edit" id="edit" onclick="edit(this, '{{ article.title }}', '{{ article.content }}', '{{ article.id }}')">Edit</button>
+                {% elif article.author.username == username and can_post %}
+                    <button class="edit" id ="edit" onclick="edit(this, '{{ article.title }}', '{{ article.content }}', '{{ article.id }}')">Edit</button>   
+                {% endif %}
+                <br/>
 
-        <a href="#" id="hide_view" class="hide_view">View comments</a>
+                <a href="#" id="hide_view" class="hide_view">View comments</a>
 
-        <ul id="comment_section" class="comment_section" style="display:none;list-style-type:none;">  
-            {% if article.comments %}
-                {% for comment in article.comments %}
-                <li id="comment" class="comment" style="font-size:small;">
-                    <div> <b>{{ comment.author.username }}</b> {{ comment.author.account }} </div> 
-                    {% if comment.author.account == 'staff' %}
-                        <div id="role" style="color:#969696;">{{ comment.author.staff_role }}</div>
-                    {% endif %}
-                    <div>{{ comment.date }}</div>
-                    <p id="content">{{ comment.content }}</p> <br/>
-                    {% if account == "staff" %}
-                        <button class="delete" onclick="remove(this, '{{ comment.id }}', 'delete_comment')">Delete</button>
-                    {% endif %}
-                </li>
-                {% endfor %}
-            {% else %}
+                <ul id="comment_section" class="comment_section" style="display:none;list-style-type:none;">  
+                    {% if article.comments %}
+                        {% for comment in article.comments %}
+                        <li id="comment" class="comment" style="font-size:small;">
+                            <div> <b>{{ comment.author.username }}</b> {{ comment.author.account }} </div> 
+                            {% if comment.author.account == 'staff' %}
+                                <div id="role" style="color:#969696;">{{ comment.author.staff_role }}</div>
+                            {% endif %}
+                            <div>{{ comment.date }}</div>
+                            <p id="content">{{ comment.content }}</p> <br/>
+                            {% if account == "staff" %}
+                                <button id="delete_comment" class="delete" onclick="remove(this, '{{ comment.id }}', 'delete_comment')">Delete</button>
+                            {% endif %}
+                        </li>
+                        {% endfor %}
+                    {% else %}
+                        <li class="no_comments" id="no_comments">
+                            No comments posted yet
+                        </li>   
+                    {% endif %}  
+                </ul>            
+                <input style="margin:8px" id="add_comment" placeholder="Add a comment">
+                <button id="comment_button" onclick="comment(this, '{{ article.id }}')">Comment</button>
+            </li>
+            {% endfor %}
+        {% else %}
             <li class="no_articles" id="no_articles">
-                No comments posted yet
-            </li>   
-            {% endif %}  
-        </ul>            
-        <input style="margin:8px" id="add_comment" placeholder="Add a comment">
-        <button id="comment_button" onclick="comment('{{ article.id }}')">Comment</button>
-    </li>
-    {% endfor %}
-{% else %}
-<li class="no_articles" id="no_articles">
-    No articles posted yet
-</li> 
-{% endif %}
-</ul>
+                No articles posted yet
+            </li> 
+        {% endif %}
+        </ul>
+    </div>
+
+    <div class="column right">
+    <!--User profile-->
+        <div id="profile" class="top">
+            <h2>Profile</h2>
+            <div class="article" id="account">
+                <div> <b>Username: </b> {{ username }} </div> 
+                <div> <b>Account type: </b> {{ account }}  </div>
+                    {% if account == "staff" %}
+                        <div style="font-size:small;text-indent:10px;"><u>Staff role</u>: <i>{{ role }}</i></div>
+                    {% endif %}
+                <div><b>Current permissions status:</b></div>
+                <div id="perms" style="list-style-type:none;"> 
+                {% if can_chat %}
+                    <div style="font-size:small;text-indent:10px;"> <u>Posting articles</u>: <i>allowed</i> </div>
+                {% else %}
+                    <div style="font-size:small;text-indent:10px;"> <u>Posting articles</u>: <i>muted</i> </div>
+                {% endif %} 
+
+                {% if can_post %} 
+                    <div style="font-size:small;text-indent:10px;"><u>Joining chatrooms</u>: <i>allowed</i> </div>
+                {% else %}
+                    <div style="font-size:small;text-indent:10px;"><u>Joining chatrooms</u>: <i>muted</i> </div>
+                {% endif %}
+                </div>
+            </div>
+    </div>
+</div>
 
 <div class="popup" id="popup">
     <div class="article_box" id="article_box">
-        <button id="close" class="close" >
-        &times;
-        </button>
+        <button id="close" class="close" > &times; </button>
         <h1>Edit Article</h1>
-        
         <form id="reupload">
             <p>Title:</p>
                 <input id="title" type="text" name="title" width="500px" />
@@ -191,28 +254,6 @@
     <button class="button" >New Article</button>
 </a>
 
-<!--User profile-->
-<div id="profile">
-    <h3>Profile</h3>
-    <div> Username: {{ username }} </div> 
-    <div> Account type: {{ account }} 
-        {% if account == "staff" %}
-            Staff role: {{ role }}
-        {% endif %}
-    </div>
-    <div id="perms"> Current permissions status: </div>
-        {% if can_chat %}
-            <div>Posting articles: allowed </div>
-        {% else %}
-            <div>Posting articles: muted </div>
-        {% endif %} 
-
-        {% if can_post %} 
-            <div>Joining chatrooms: allowed </div>
-        {% else %}
-            <div>Joining chatrooms: muted </div>
-        {% endif %}
-</div>
 
 
 <script src="/static/js/libs/socket.io.min.js"></script>
@@ -224,10 +265,13 @@
     let role = "{{ role }}";
    
     window.onload = function() {
-        let articles = document.querySelectorAll(".article");
+        let articles = document.querySelectorAll("li.article");
+
         articles.forEach(function(li) {
+           // console.log(li.textContent);
             let comments = li.querySelector(".comment_section");
-            let show_sign = li.querySelector(".hide_view");
+            let show_sign = li.querySelector("a.hide_view");
+            console.log(show_sign.textContent);
 
             show_sign.addEventListener("click", function(event) {
                 // Prevent default behavior of the link
@@ -238,7 +282,7 @@
                     comments.style.display = "block";
                     this.textContent = "Hide comments";
                 } else {
-                    extraContent.style.display = "none";
+                    comments.style.display = "none";
                     this.textContent = "View comments";
                 }
             });
@@ -251,17 +295,6 @@
         location.reload();
     });
        
-    function toggle_comments(show_sign, hide_sign, comments) {
-        if (comments.style.display === "none") {
-            comments.style.display = "block";
-            show_sign.style.display = "none";
-            hide_sign.style.display = "block";
-        } else {
-            comments.style.display = "none";
-            show_sign.style.display = "block";
-            hide_sign.style.display = "none";
-        }
-    }
 
     function remove(liElem, id, call) {
         console.log(id);
@@ -276,11 +309,6 @@
                 var li_item = liElem.parentNode;
                 var ul = li_item.parentNode;
                 ul.removeChild(li_item);
-
-                if (call === "delete_article" && ul.length == 0) {
-                    none = document.getElementById("no_articles");
-                    none.style.display = "block";
-                }
             }
         }); 
     }
@@ -396,12 +424,17 @@
     }
 
     //create new comment
-    function comment(comment_button, article_id) {
-        content = $("#add_comment").val();
-        socket.emit("comment", username, article_id, content, (date) => {
-            if (typeof date == "string") {
+    function comment(butt, article_id) {
+        var article = butt.parentNode;
+        content = article.querySelector("#add_comment").value;
+        console.log(content);
+        socket.emit("comment", username, article_id, content, (res) => {
+            console.log(res);
+            console.log(Array.isArray(res));
+            if (Array.isArray(res)) {
                 //add comment to article
-                all_comments = document.getElementById("comment_section");
+                all_comments = article.querySelector("ul.comment_section");
+
                 var new_comment = document.createElement("li");
                 new_comment.style.fontSize = "small";
 
@@ -412,7 +445,7 @@
                 div.append(" " + account);
                 
                 var div_date = document.createElement("div");
-                div_date.innerText = date
+                div_date.innerText = res[0]
                 
                 var p = document.createElement("p");
                 p.innerText = content;
@@ -427,7 +460,21 @@
                 }
                 new_comment.appendChild(p);
 
+                if (account == "staff") {
+
+                    let button = document.createElement("button");
+                    button.onclick = function(e) {
+                        remove(this, res[1], "delete_comment");
+                    }
+                    button.class = "delete";
+                    button.id = "delete_comment";
+                    button.textContent = "Delete";
+                    
+                    new_comment.appendChild(button);
+                }           
+                
                 all_comments.appendChild(new_comment);
+            
             }
             else {
                 alert("Could not create comment");

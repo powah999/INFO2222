@@ -346,8 +346,8 @@ def new_article():
 
 @app.route("/logout")
 def logout():
-    if (session.get("username")):
-        username = session.get("username")
+    if (session["username"]):
+        username = session["username"]
         session_ids.pop(username, None)
         public_keys.keys.pop(username, None)
         session_tokens.pop(username, None)
@@ -365,10 +365,12 @@ def upload():
     user = db.get_user(session["username"])
 
     if not title or not content:
-        return "Failed to upload"
+        print("Cannot have empty text fields")
+        return "Fail"
     
     if title == "" or content == "":
-        return "Cannot have empty text fields"
+        print("Cannot have empty text fields")
+        return "Fail"
         
     if file and file.filename != '':
         file_name = f"{user.id}_{file.filename}"
@@ -377,12 +379,14 @@ def upload():
         print("no file was uploaded")
         file_name = ""
     else:
-        return "Failed to upload file"
+        print("Failed to upload file")
+        return "Fail"
     
-    if not db.create_article(username=session.get("username"), title=title, content=content, file_name=file_name):
-        return "Could not create new article"
+    if not db.create_article(username=session["username"], title=title, content=content, file_name=file_name):
+        print("Could not create new article")
+        return "Fail"
         
-    return redirect(url_for("articles", username=session["username"]))
+    return url_for("articles", username=session["username"])
 
 @app.route("/reupload", methods=["POST"])
 def reupload():
@@ -391,7 +395,7 @@ def reupload():
     file = request.files.get('file')
     article_id = request.form.get("article_id")
 
-    user = db.get_user(session.get("username"))
+    user = db.get_user(session["username"])
 
     if (not title and not content) or not article_id:
         return "Fail"
@@ -421,10 +425,12 @@ def send_file(filename):
 
 @app.route('/users')
 def users():
-    user = db.get_user(session.get("username"))
-
+    user = db.get_user(session["username"])
+    print(session["username"])
+    print(user.username)
+    print(user.account)
     if user.account == "staff":
-        return render_template("users.jinja", username = session["username"], account=user.account)
+        return render_template("users.jinja", username = session["username"], account=user.account, users=db.get_all_users())
 
     return "Students are not authorised to this page"
 

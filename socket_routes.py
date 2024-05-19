@@ -410,27 +410,27 @@ def delete_comment(comment_id):
         return "Students cannot delete comments"
     
     if not db.delete_comment(comment_id=comment_id):
-        return "Could not delete article"
+        return "Could not delete comment"
     
     return True
 
 @socketio.on("mute")
 def mute(username, call):
 
-    if call == "mute_chat" and not db.mute_chat(staff_name=session["username"], username=username):
+    if call == "chat" and not db.mute_chat(staff_name=session["username"], username=username):
         return False
     
-    if call == "mute_post" and not db.mute_post(staff_name=session["username"], username=username):
+    if call == "post" and not db.mute_post(staff_name=session["username"], username=username):
         return False
     
     return True
 
 @socketio.on("unmute")
 def unmute(username, call):
-    if call == "unmute_chat" and not db.unmute_chat(staff_name=session["username"], username=username):
+    if call == "chat" and not db.unmute_chat(staff_name=session["username"], username=username):
         return False
     
-    if call == "unmute_post" and not db.unmute_post(staff_name=session["username"], username=username):
+    if call == "post" and not db.unmute_post(staff_name=session["username"], username=username):
         return False
     
     return True

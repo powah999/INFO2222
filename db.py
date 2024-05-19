@@ -328,6 +328,8 @@ def edit_article(article_id, new_title, new_content, file_name=""):
 def add_comment(article_id, username, content):
     with Session(engine) as session:
         user = get_user(username)
+        print(username)
+        print(article_id)
 
         article = session.query(Article).filter_by(id=article_id).first()
         if article:
@@ -335,7 +337,7 @@ def add_comment(article_id, username, content):
             comment = Comment(user_id=user.id, article_id=article_id, content=content)
             session.add(comment)
             session.commit()
-            return comment.date
+            return [comment.date, str(comment.id)]
 
         return False
 
@@ -391,91 +393,110 @@ def can_chat():
 
 
 def mute_post(staff_name, username):
-    user = get_user(username)
-    staff = get_user(staff_name)
+    with Session(engine) as session:
+        user = get_user(username)
+        staff = get_user(staff_name)
 
-    if not (staff and user):
-        print("Staff or user accounts don't exist")
-        return False
-
-    if staff.can_post:
-        if staff.staff_role == "admin user":
-            user.can_post = False
-        elif staff.staff_role == "administrative staff" and (user.staff_role != "admin user"):
-            user.can_post = False
-        elif staff.staff_role == "academic" and (user.staff_role == "N/A"):
-            user.can_post = False 
-        else:
-            print("Staff member is not authorised to mute user")   
+        if not (staff and user):
+            print("Staff or user accounts don't exist")
             return False
 
-        return True
-    
-    return False
+        user = session.query(User).filter_by(username=username).first()
+        if staff.can_post:
+            if staff.staff_role == "admin user":
+                user.can_post = False
+            elif staff.staff_role == "administrative staff" and (user.staff_role != "admin user"):
+                user.can_post = False
+            elif staff.staff_role == "academic" and (user.staff_role == "N/A"):
+                user.can_post = False 
+            else:
+                print("Staff member is not authorised to mute user")   
+                return False
+
+            session.commit()
+            return True
+        
+        return False
 
 def unmute_post(staff_name, username):
-    user = get_user(username)
-    staff = get_user(staff_name)
+    with Session(engine) as session:
+        user = get_user(username)
+        staff = get_user(staff_name)
 
-    if not (staff and user):
-        print("Staff or user accounts don't exist")
-        return False
-
-    if staff.can_post:
-        if staff.staff_role == "admin user":
-            user.can_post = True
-        elif staff.staff_role == "administrative staff" and (user.staff_role != "admin user"):
-            user.can_post = True
-        elif staff.staff_role == "academic" and (user.staff_role == "N/A"):
-            user.can_post = True
-        else:
-            print("Staff member is not authorised to mute user")   
+        if not (staff and user):
+            print("Staff or user accounts don't exist")
             return False
+        
+        user = session.query(User).filter_by(username=username).first()
+        if staff.can_post:
+            if staff.staff_role == "admin user":
+                user.can_post = True
+            elif staff.staff_role == "administrative staff" and (user.staff_role != "admin user"):
+                user.can_post = True
+            elif staff.staff_role == "academic" and (user.staff_role == "N/A"):
+                user.can_post = True
+            else:
+                print("Staff member is not authorised to mute user")   
+                return False
 
-        return True
+            session.commit()
+            return True
+        
+        return False
 
 def mute_chat(staff_name, username):
-    user = get_user(username)
-    staff = get_user(staff_name)
-    if not (staff and user):
-        print("Staff or user accounts don't exist")
-        return False
-    
-    if staff.can_message:
-        if staff.staff_role == "admin user":
-            user.can_message = False
-        elif staff.staff_role == "administrative staff" and (user.staff_role != "admin user"):
-            user.can_message = False
-        elif staff.staff_role == "academic" and (user.staff_role == "N/A"):
-            user.can_message = False 
-        else:
-            print("Staff member is not authorised to mute user")   
+    with Session(engine) as session:
+        user = get_user(username)
+        staff = get_user(staff_name)
+        if not (staff and user):
+            print("Staff or user accounts don't exist")
             return False
+        
+        user = session.query(User).filter_by(username=username).first()
+        print(user.can_message)
+        if staff.can_message:
+            if staff.staff_role == "admin user":
+                user.can_message = False
+            elif staff.staff_role == "administrative staff" and (user.staff_role != "admin user"):
+                user.can_message = False
+            elif staff.staff_role == "academic" and (user.staff_role == "N/A"):
+                user.can_message = False 
+            else:
+                print("Staff member is not authorised to mute user")   
+                return False
 
-        return True
+            print(user.can_message)
+            session.commit()
+            return True
 
-    return False
+        return False
 
 def unmute_chat(staff_name, username):
-    user = get_user(username)
-    staff = get_user(staff_name)
+    with Session(engine) as session:
+        user = get_user(username)
+        staff = get_user(staff_name)
 
-    if not (staff and user):
-        print("Staff or user accounts don't exist")
-        return False
-
-    if staff.can_message:
-        if staff.staff_role == "admin user":
-            user.can_message = True
-        elif staff.staff_role == "administrative staff" and (user.staff_role != "admin user"):
-            user.can_message = True
-        elif staff.staff_role == "academic" and (user.staff_role == "N/A"):
-            user.can_message = True
-        else:
-            print("Staff member is not authorised to mute user")   
+        if not (staff and user):
+            print("Staff or user accounts don't exist")
             return False
 
-        return True
+        user = session.query(User).filter_by(username=username).first()
+        print(user.can_message)
+        if staff.can_message:
+            if staff.staff_role == "admin user":
+                user.can_message = True
+            elif staff.staff_role == "administrative staff" and (user.staff_role != "admin user"):
+                user.can_message = True
+            elif staff.staff_role == "academic" and (user.staff_role == "N/A"):
+                user.can_message = True
+            else:
+                print("Staff member is not authorised to mute user")   
+                return False
+           
+            print(user.can_message)
+            session.commit()
+            return True
+        return False
     
 #only staff allowed
 def delete_comment(comment_id):
