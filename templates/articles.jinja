@@ -131,6 +131,11 @@
     body.dark-mode {
         background-color: black;
         color: white;
+
+    }
+
+    body.dark-mode .article {
+        box-shadow:rgba(255, 255, 255, 0.594) 0px 2px 5px -1px, rgb(245, 245, 245) 0px 1px 3px -1px;
     }
 </style>
 
@@ -140,7 +145,7 @@
     <li><a href=" {{ url_for('home', username=username) }}">Messages</a></li>
     <li><a href="{{ url_for('new_article') }}">New Article</a></li>
     {% if account == "staff" %}
-    <li><a href="{{ url_for('users') }}">User permissions</a></li>
+        <li><a href="{{ url_for('users') }}">User permissions</a></li>
     {% endif %}
     <li class="right"><a class="active" href="{{ url_for('logout')}}">Sign Out</a></li>
     <li><button id="toggle-button">Toggle Dark Mode</button></li>
@@ -162,10 +167,10 @@
                 {{ article.author.username }} <br />
                 <small> <b>{{ article.author.account }}</b>
                     {% if article.author.account == 'staff' %}
-                    {{ article.author.staff_role }}
+                        <span style="color:#969696;">{{ article.author.staff_role }}</span>
                     {% endif %}
-                </small> <br />
-                <p style="font-size: small" id="article_date"> {{ article.date }} </p>
+                </small> 
+                <div style="font-size: small" id="article_date"> {{ article.date }} </div>
                 <p id="article_content">{{ article.content }}</p> <br />
                 {% if article.file_name != '' %}
                 <a class="download" id="download" href="{{ url_for('send_file', filename=article.file_name)}}">{{
@@ -250,7 +255,7 @@
                 <p>Title:</p>
                 <input id="title" type="text" name="title" width="500px" />
                 <p>Content:</p>
-                <input id="content" type="text" name="content" class="content-box" />
+                <textarea id="content" form="reupload" name="content" class="content-box"></textarea>
                 <p>Upload attachment:</p>
                 <input id="file" type="file" name="file" />
                 <br />

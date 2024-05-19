@@ -79,6 +79,12 @@
         background-color: black;
         color: white;
     }
+
+    body.dark-mode .article {
+        background-color: black;
+        color: white;
+        box-shadow: rgba(255, 255, 255, 0.594) 0px 2px 5px -1px, rgb(245, 245, 245) 0px 1px 3px -1px;
+    }
 </style>
 
 <ul class="navbar">
@@ -86,7 +92,7 @@
     <li><a href=" {{ url_for('home', username=username) }}">Messages</a></li>
     <li><a href="{{ url_for('new_article') }}">New Article</a></li>
     {% if account == "staff" %}
-    <li><a href="{{ url_for('users') }}">User permissions</a></li>
+        <li><a href="{{ url_for('users') }}">User permissions</a></li>
     {% endif %}
     <li class="right"><a class="active" href="{{ url_for('logout')}}">Sign Out</a></li>
     <li><button id="toggle-button">Toggle Dark Mode</button></li>

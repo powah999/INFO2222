@@ -383,7 +383,7 @@ def edit_article(article_id, new_title, new_content, file_name=""):
 #make comment on article
 def add_comment(article_id, username, content):
     with Session(engine) as session:
-        user = get_user(username)
+        user = session.query(User).filter_by(username=username).first()
         print(username)
         print(article_id)
 

@@ -272,7 +272,7 @@ def home():
 
     groups = db.get_groups(username)
 
-    return render_template("home.jinja", username=username, friends=friends, received=db.get_received(username), pending=db.get_sent(username), friend_status=friend_status, friend_roles=friend_roles, groups=groups)
+    return render_template("home.jinja", username=username, friends=friends, account=db.get_user(username).account, received=db.get_received(username), pending=db.get_sent(username), friend_status=friend_status, friend_roles=friend_roles, groups=groups)
 
 
 #home page, contains all posts
@@ -332,7 +332,7 @@ def new_article():
     user = db.get_user(session["username"])
 
     if user.can_post:
-        return render_template("newarticle.jinja", username=session["username"])
+        return render_template("newarticle.jinja", username=session["username"], account=user.account)
     
     print("User cannot make posts")
     return "User cannot make posts"

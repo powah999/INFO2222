@@ -86,6 +86,27 @@
         background-color: black;
         color: white;
     }
+
+    body.dark-mode .user {
+        box-shadow: rgba(255, 255, 255, 0.594) 0px 2px 5px -1px, rgb(245, 245, 245) 0px 1px 3px -1px;
+    }
+
+    .column {
+        float: left;
+        }
+    
+    .left, .right {
+        width: 50%;
+    }
+
+  
+
+    /* Clear floats after the columns */
+    .row:after {
+        content: "";
+        display: table;
+        clear: both;
+    }
 </style>
 
 <ul class="navbar">
@@ -93,7 +114,7 @@
     <li><a href=" {{ url_for('home', username=username) }}">Messages</a></li>
     <li><a href="{{ url_for('new_article') }}">New Article</a></li>
     {% if account == "staff" %}
-    <li><a href="{{ url_for('users') }}">User permissions</a></li>
+        <li><a href="{{ url_for('users') }}">User permissions</a></li>
     {% endif %}
     <li class="right"><a class="active" href="{{ url_for('logout')}}">Sign Out</a></li>
     <li><button id="toggle-button">Toggle Dark Mode</button></li>
@@ -101,87 +122,90 @@
 
 <h1 style="padding:20px;margin-top:30px;">User permissions</h1>
 
-<div id="posting">
-    <h2>Posting articles:</h2>
+<div class="row">
+    <div class="column left" id="posting">
+        <h2>Posting articles:</h2>
 
-    <ul id="can_post" style="list-style-type:none;">
-        <h3>Authorised users:</h3>
-        {% if users %}
-        {% for user in users %}
-        {% if user.username != username and user.can_post %}
-        <li id="user_post" class="user">
-            <div id="username"> <b>Username: </b> {{ user.username }} </div>
-            <div> <b>Account type:</b> {{ user.account }} </div>
-            {% if user.account == "staff" %}
-            <div style="font-size:small;text-indent:10px;"><u>Staff role</u>: <i>{{ user.staff_role }}</i></div>
+        <ul id="can_post" style="list-style-type:none;">
+            <h3>Authorised users:</h3>
+            {% if users %}
+            {% for user in users %}
+            {% if user.username != username and user.can_post %}
+            <li id="user_post" class="user">
+                <div id="username"> <b>Username: </b> {{ user.username }} </div>
+                <div> <b>Account type:</b> {{ user.account }} </div>
+                {% if user.account == "staff" %}
+                <div style="font-size:small;text-indent:10px;"><u>Staff role</u>: <i>{{ user.staff_role }}</i></div>
+                {% endif %}
+                <button class="button" id="mute_post" onclick="mute_post(this, '{{ user.username }}' )">Mute user</button>
+            </li>
             {% endif %}
-            <button class="button" id="mute_post" onclick="mute_post(this, '{{ user.username }}' )">Mute user</button>
-        </li>
-        {% endif %}
-        {% endfor %}
-        {% endif %}
-    </ul>
+            {% endfor %}
+            {% endif %}
+        </ul>
 
-    <ul id="cant_post" style="list-style-type:none;">
-        <h3>Muted users:</h3>
-        {% if users %}
-        {% for user in users %}
-        {% if user.username != username and not user.can_post %}
-        <li id="cant_post" class="user">
-            <div> <b>Username: </b> {{ user.username }} </div>
-            <div> <b>Account type:</b> {{ user.account }} </div>
-            {% if user.account == "staff" %}
-            <div style="font-size:small;text-indent:10px;"><u>Staff role</u>: <i>{{ user.staff_role }}</i></div>
+        <ul id="cant_post" style="list-style-type:none;">
+            <h3>Muted users:</h3>
+            {% if users %}
+            {% for user in users %}
+            {% if user.username != username and not user.can_post %}
+            <li id="cant_post" class="user">
+                <div> <b>Username: </b> {{ user.username }} </div>
+                <div> <b>Account type:</b> {{ user.account }} </div>
+                {% if user.account == "staff" %}
+                <div style="font-size:small;text-indent:10px;"><u>Staff role</u>: <i>{{ user.staff_role }}</i></div>
+                {% endif %}
+                <button class="button" id="unmute_post" onclick="unmute_post(this, '{{ user.username }}' )">Unmute
+                    user</button>
+            </li>
             {% endif %}
-            <button class="button" id="unmute_post" onclick="unmute_post(this, '{{ user.username }}' )">Unmute
-                user</button>
-        </li>
-        {% endif %}
-        {% endfor %}
-        {% endif %}
-    </ul>
+            {% endfor %}
+            {% endif %}
+        </ul>
+    </div>
+    
+    <div class="column right" id="chatting">
+        <h2>Joining chatrooms:</h2>
+
+        <ul id="can_chat" style="list-style-type:none;">
+            <h3>Authorised users:</h3>
+            {% if users %}
+            {% for user in users %}
+            {% if user.username != username and user.can_message %}
+            <li id="can_chat" class="user">
+                <div><b>Username: </b> {{ user.username }}</div>
+                <div> <b>Account type: </b> {{ user.account }} </div>
+                {% if user.account == "staff" %}
+                <div style="font-size:small;text-indent:10px;"><u>Staff role</u>: <i>{{ user.staff_role }}</i></div>
+                {% endif %}
+                <button class="button" id="mute_chat" onclick="mute_chat(this, '{{ user.username }}' )">Mute user</button>
+            </li>
+            {% endif %}
+            {% endfor %}
+            {% endif %}
+        </ul>
+
+        <ul id="cant_chat" style="list-style-type:none;">
+            <h3>Muted users:</h3>
+            {% if users %}
+            {% for user in users %}
+            {% if user.username != username and not user.can_message %}
+            <li id="cant_chat" class="user">
+                <div><b>Username: </b> {{ user.username }}</div>
+                <div> <b>Account type: </b> {{ user.account }} </div>
+                {% if user.account == "staff" %}
+                <div style="font-size:small;text-indent:10px;"><u>Staff role</u>: <i>{{ user.staff_role }}</i></div>
+                {% endif %}
+                <button id="unmute_chat" onclick="unmute_chat(this, '{{ user.username }}' )">Unmute user</button>
+            </li>
+            {% endif %}
+            {% endfor %}
+            {% endif %}
+        </ul>
+    </div>
 </div>
 
 
-<div id="chatting">
-    <h2>Joining chatrooms:</h2>
-
-    <ul id="can_chat" style="list-style-type:none;">
-        <h3>Authorised users:</h3>
-        {% if users %}
-        {% for user in users %}
-        {% if user.username != username and user.can_message %}
-        <li id="can_chat" class="user">
-            <div><b>Username: </b> {{ user.username }}</div>
-            <div> <b>Account type: </b> {{ user.account }} </div>
-            {% if user.account == "staff" %}
-            <div style="font-size:small;text-indent:10px;"><u>Staff role</u>: <i>{{ user.staff_role }}</i></div>
-            {% endif %}
-            <button class="button" id="mute_chat" onclick="mute_chat(this, '{{ user.username }}' )">Mute user</button>
-        </li>
-        {% endif %}
-        {% endfor %}
-        {% endif %}
-    </ul>
-
-    <ul id="cant_chat" style="list-style-type:none;">
-        <h3>Muted users:</h3>
-        {% if users %}
-        {% for user in users %}
-        {% if user.username != username and not user.can_message %}
-        <li id="cant_chat" class="user">
-            <div><b>Username: </b> {{ user.username }}</div>
-            <div> <b>Account type: </b> {{ user.account }} </div>
-            {% if user.account == "staff" %}
-            <div style="font-size:small;text-indent:10px;"><u>Staff role</u>: <i>{{ user.staff_role }}</i></div>
-            {% endif %}
-            <button id="unmute_chat" onclick="unmute_chat(this, '{{ user.username }}' )">Unmute user</button>
-        </li>
-        {% endif %}
-        {% endfor %}
-        {% endif %}
-    </ul>
-</div>
 
 <script src="/static/js/libs/socket.io.min.js"></script>
 <script>
@@ -222,7 +246,7 @@
                 });
                 new_item.appendChild(button);
 
-                ul.appendChild(bew_item);
+                ul.appendChild(new_item);
             }
             else {
                 alert("Failed to mute user");
