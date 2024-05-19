@@ -7,7 +7,8 @@
         float: left;
     }
 
-    .left, .right {
+    .left,
+    .right {
         width: 25%;
     }
 
@@ -22,7 +23,7 @@
     }
 
     .button {
-        background-color: #b0abd2; 
+        background-color: #b0abd2;
         border: none;
         color: #1b1b1b;
         padding: 12px;
@@ -37,7 +38,7 @@
         right: 12px;
         border-radius: 4px;
     }
-    
+
     .button:hover {
         background-color: #9d83fa;
     }
@@ -53,7 +54,7 @@
     .article_box {
         position: relative;
     }
-    
+
     .popup .article_box {
         visibility: hidden;
         position: absolute;
@@ -62,16 +63,16 @@
         transform: translate(-50%, -50%);
         background-color: #b7b7b7;
         padding: 20px;
-        }
-    
+    }
+
     #re_post {
         position: absolute;
         bottom: 5px;
         right: 20px;
-        }
+    }
 
     .close {
-        background-color: #b0abd2; 
+        background-color: #b0abd2;
         border: none;
         color: #1b1b1b;
         padding: 5px 5px 5px 5px;
@@ -81,15 +82,15 @@
         font-size: 14px;
         cursor: pointer;
         position: absolute;
-        border-radius: 4px;    
-        top: 5px; 
+        border-radius: 4px;
+        top: 5px;
         right: 10px;
     }
 
     .close:hover {
         background-color: #9d83fa;
     }
-        
+
     .popup {
         display: inline-block;
         cursor: pointer;
@@ -106,13 +107,13 @@
 
     .content-box {
         width: 500px;
-        height: 200px; 
+        height: 200px;
     }
 
     .top {
-        padding:20px;
-        margin-top:30px;
-        list-style-type:none;
+        padding: 20px;
+        margin-top: 30px;
+        list-style-type: none;
     }
 
     #account {
@@ -122,369 +123,392 @@
         padding-left: 10px;
     }
 
+    body.light-mode {
+        background-color: white;
+        color: black;
+    }
+
+    body.dark-mode {
+        background-color: black;
+        color: white;
+    }
 </style>
 
 <!--Navbar code / links-->
-<ul class = "navbar">
+<ul class="navbar">
     <li><a href="{{ url_for('articles', username=username) }}">Home</a></li>
     <li><a href=" {{ url_for('home', username=username) }}">Messages</a></li>
     <li><a href="{{ url_for('new_article') }}">New Article</a></li>
     {% if account == "staff" %}
-        <li><a href="{{ url_for('users') }}">User permissions</a></li> 
+    <li><a href="{{ url_for('users') }}">User permissions</a></li>
     {% endif %}
     <li class="right"><a class="active" href="{{ url_for('logout')}}">Sign Out</a></li>
+    <li><button id="toggle-button">Toggle Dark Mode</button></li>
 </ul>
 
 <div class="row">
     <div class="column left">
-        <br/>
+        <br />
     </div>
     <div class="column middle">
-        <ul id="articles" class="top" >
-        <h1>Home</h1>
-        <br/>
-        {% if articles %}
+        <ul id="articles" class="top">
+            <h1>Home</h1>
+            <br />
+            {% if articles %}
             {% for article in articles %}
             <li id="article" class="article">
                 <h2 class="title" id="article_title">{{ article.title }}</h2>
-                {{ article.author.username }} <br/>
+                {{ article.author.username }} <br />
                 <small> <b>{{ article.author.account }}</b>
-                {% if article.author.account == 'staff' %}
+                    {% if article.author.account == 'staff' %}
                     {{ article.author.staff_role }}
-                {% endif %}
-                </small> <br/>
+                    {% endif %}
+                </small> <br />
                 <p style="font-size: small" id="article_date"> {{ article.date }} </p>
-                <p id="article_content" >{{ article.content }}</p> <br/>
+                <p id="article_content">{{ article.content }}</p> <br />
                 {% if article.file_name != '' %}
-                    <a class="download" id="download" href="{{ url_for('send_file', filename=article.file_name)}}">{{ article.file_name }} </a>
+                <a class="download" id="download" href="{{ url_for('send_file', filename=article.file_name)}}">{{
+                    article.file_name }} </a>
                 {% endif %}
-                
+
                 <!-- enable button if staff -->
                 {% if account == "staff" %}
-                    <button class="delete" onclick="remove(this, '{{ article.id }}', 'delete_article')">Delete</button>
-                    <button class="edit" id="edit" onclick="edit(this, '{{ article.title }}', '{{ article.content }}', '{{ article.id }}')">Edit</button>
+                <button class="delete" onclick="remove(this, '{{ article.id }}', 'delete_article')">Delete</button>
+                <button class="edit" id="edit"
+                    onclick="edit(this, '{{ article.title }}', '{{ article.content }}', '{{ article.id }}')">Edit</button>
                 {% elif article.author.username == username and can_post %}
-                    <button class="edit" id ="edit" onclick="edit(this, '{{ article.title }}', '{{ article.content }}', '{{ article.id }}')">Edit</button>   
+                <button class="edit" id="edit"
+                    onclick="edit(this, '{{ article.title }}', '{{ article.content }}', '{{ article.id }}')">Edit</button>
                 {% endif %}
-                <br/>
+                <br />
 
                 <a href="#" id="hide_view" class="hide_view">View comments</a>
 
-                <ul id="comment_section" class="comment_section" style="display:none;list-style-type:none;">  
+                <ul id="comment_section" class="comment_section" style="display:none;list-style-type:none;">
                     {% if article.comments %}
-                        {% for comment in article.comments %}
-                        <li id="comment" class="comment" style="font-size:small;">
-                            <div> <b>{{ comment.author.username }}</b> {{ comment.author.account }} </div> 
-                            {% if comment.author.account == 'staff' %}
-                                <div id="role" style="color:#969696;">{{ comment.author.staff_role }}</div>
-                            {% endif %}
-                            <div>{{ comment.date }}</div>
-                            <p id="content">{{ comment.content }}</p> <br/>
-                            {% if account == "staff" %}
-                                <button id="delete_comment" class="delete" onclick="remove(this, '{{ comment.id }}', 'delete_comment')">Delete</button>
-                            {% endif %}
-                        </li>
-                        {% endfor %}
+                    {% for comment in article.comments %}
+                    <li id="comment" class="comment" style="font-size:small;">
+                        <div> <b>{{ comment.author.username }}</b> {{ comment.author.account }} </div>
+                        {% if comment.author.account == 'staff' %}
+                        <div id="role" style="color:#969696;">{{ comment.author.staff_role }}</div>
+                        {% endif %}
+                        <div>{{ comment.date }}</div>
+                        <p id="content">{{ comment.content }}</p> <br />
+                        {% if account == "staff" %}
+                        <button id="delete_comment" class="delete"
+                            onclick="remove(this, '{{ comment.id }}', 'delete_comment')">Delete</button>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
                     {% else %}
-                        <li class="no_comments" id="no_comments">
-                            No comments posted yet
-                        </li>   
-                    {% endif %}  
-                </ul>            
+                    <li class="no_comments" id="no_comments">
+                        No comments posted yet
+                    </li>
+                    {% endif %}
+                </ul>
                 <input style="margin:8px" id="add_comment" placeholder="Add a comment">
                 <button id="comment_button" onclick="comment(this, '{{ article.id }}')">Comment</button>
             </li>
             {% endfor %}
-        {% else %}
+            {% else %}
             <li class="no_articles" id="no_articles">
                 No articles posted yet
-            </li> 
-        {% endif %}
+            </li>
+            {% endif %}
         </ul>
     </div>
 
     <div class="column right">
-    <!--User profile-->
+        <!--User profile-->
         <div id="profile" class="top">
             <h2>Profile</h2>
             <div class="article" id="account">
-                <div> <b>Username: </b> {{ username }} </div> 
-                <div> <b>Account type: </b> {{ account }}  </div>
-                    {% if account == "staff" %}
-                        <div style="font-size:small;text-indent:10px;"><u>Staff role</u>: <i>{{ role }}</i></div>
-                    {% endif %}
-                <div><b>Current permissions status:</b></div>
-                <div id="perms" style="list-style-type:none;"> 
-                {% if can_chat %}
-                    <div style="font-size:small;text-indent:10px;"> <u>Posting articles</u>: <i>allowed</i> </div>
-                {% else %}
-                    <div style="font-size:small;text-indent:10px;"> <u>Posting articles</u>: <i>muted</i> </div>
-                {% endif %} 
-
-                {% if can_post %} 
-                    <div style="font-size:small;text-indent:10px;"><u>Joining chatrooms</u>: <i>allowed</i> </div>
-                {% else %}
-                    <div style="font-size:small;text-indent:10px;"><u>Joining chatrooms</u>: <i>muted</i> </div>
+                <div> <b>Username: </b> {{ username }} </div>
+                <div> <b>Account type: </b> {{ account }} </div>
+                {% if account == "staff" %}
+                <div style="font-size:small;text-indent:10px;"><u>Staff role</u>: <i>{{ role }}</i></div>
                 {% endif %}
+                <div><b>Current permissions status:</b></div>
+                <div id="perms" style="list-style-type:none;">
+                    {% if can_chat %}
+                    <div style="font-size:small;text-indent:10px;"> <u>Posting articles</u>: <i>allowed</i> </div>
+                    {% else %}
+                    <div style="font-size:small;text-indent:10px;"> <u>Posting articles</u>: <i>muted</i> </div>
+                    {% endif %}
+
+                    {% if can_post %}
+                    <div style="font-size:small;text-indent:10px;"><u>Joining chatrooms</u>: <i>allowed</i> </div>
+                    {% else %}
+                    <div style="font-size:small;text-indent:10px;"><u>Joining chatrooms</u>: <i>muted</i> </div>
+                    {% endif %}
                 </div>
             </div>
+        </div>
     </div>
-</div>
 
-<div class="popup" id="popup">
-    <div class="article_box" id="article_box">
-        <button id="close" class="close" > &times; </button>
-        <h1>Edit Article</h1>
-        <form id="reupload">
-            <p>Title:</p>
+    <div class="popup" id="popup">
+        <div class="article_box" id="article_box">
+            <button id="close" class="close"> &times; </button>
+            <h1>Edit Article</h1>
+            <form id="reupload">
+                <p>Title:</p>
                 <input id="title" type="text" name="title" width="500px" />
-            <p>Content:</p>
-                <input id="content" type="text" name="content" class="content-box"/>
-            <p>Upload attachment:</p>
-                <input id="file" type="file" name="file"/>
-            <br/>
-            <br/>
-            <br/>
-            <button class="button" id="re_post" type="submit">Re-post</button>
-        </form>   
-    </div> 
-</div>
+                <p>Content:</p>
+                <input id="content" type="text" name="content" class="content-box" />
+                <p>Upload attachment:</p>
+                <input id="file" type="file" name="file" />
+                <br />
+                <br />
+                <br />
+                <button class="button" id="re_post" type="submit">Re-post</button>
+            </form>
+        </div>
+    </div>
 
-<a href={{ url_for('new_article') }}>
-    <button class="button" >New Article</button>
-</a>
+    <a href={{ url_for('new_article') }}>
+        <button class="button">New Article</button>
+    </a>
 
 
 
-<script src="/static/js/libs/socket.io.min.js"></script>
-<script>
-    let getFile = "{{ url_for('upload') }}";
-    const socket = io();
-    let username = "{{ username }}";
-    let account = "{{ account }}";
-    let role = "{{ role }}";
-   
-    window.onload = function() {
-        let articles = document.querySelectorAll("li.article");
+    <script src="/static/js/libs/socket.io.min.js"></script>
+    <script>
+        let getFile = "{{ url_for('upload') }}";
+        const socket = io();
+        let username = "{{ username }}";
+        let account = "{{ account }}";
+        let role = "{{ role }}";
 
-        articles.forEach(function(li) {
-           // console.log(li.textContent);
-            let comments = li.querySelector(".comment_section");
-            let show_sign = li.querySelector("a.hide_view");
-            console.log(show_sign.textContent);
+        function toggleDarkMode() {
+            const currentMode = document.body.classList.contains('dark-mode') ? 'dark' : 'light';
+            const newMode = currentMode === 'dark' ? 'light' : 'dark';
+            document.body.classList.remove(currentMode + '-mode');
+            document.body.classList.add(newMode + '-mode');
+            Cookies.set('mode', newMode);
+        }
 
-            show_sign.addEventListener("click", function(event) {
-                // Prevent default behavior of the link
-                event.preventDefault();
+        document.getElementById('toggle-button').addEventListener('click', toggleDarkMode);
 
-                // Toggle the visibility of the extra content
-                if (comments.style.display === "none") {
-                    comments.style.display = "block";
-                    this.textContent = "Hide comments";
-                } else {
-                    comments.style.display = "none";
-                    this.textContent = "View comments";
-                }
+        window.onload = function () {
+            let articles = document.querySelectorAll("li.article");
+
+            articles.forEach(function (li) {
+                // console.log(li.textContent);
+                let comments = li.querySelector(".comment_section");
+                let show_sign = li.querySelector("a.hide_view");
+                console.log(show_sign.textContent);
+
+                show_sign.addEventListener("click", function (event) {
+                    // Prevent default behavior of the link
+                    event.preventDefault();
+
+                    // Toggle the visibility of the extra content
+                    if (comments.style.display === "none") {
+                        comments.style.display = "block";
+                        this.textContent = "Hide comments";
+                    } else {
+                        comments.style.display = "none";
+                        this.textContent = "View comments";
+                    }
+                });
             });
-        });
-    }
+        }
 
-    var close_button = document.getElementById("close");
-    close_button.addEventListener("click", function() {
-        this.parentElement.style.display = 'none'; 
-        location.reload();
-    });
-       
-
-    function remove(liElem, id, call) {
-        console.log(id);
-
-        socket.emit(call, id, (success) => {
-            if (typeof success == "string") {
-                //unsuccessful removal
-                alert(success);
-            }
-            else {
-                //dynamically update list
-                var li_item = liElem.parentNode;
-                var ul = li_item.parentNode;
-                ul.removeChild(li_item);
-            }
-        }); 
-    }
-
-
-    //popup to edit post
-    function edit(liElem, old_title, old_content, id) {
-        popup = document.getElementById('article_box');
-
-        document.getElementById("title").value = old_title;
-        document.getElementById("content").value = old_content;
-
-        popup.classList.toggle("show");
-
-       // let repost_button = document.getElementById("re_post");
-        let url = '{{ url_for("reupload") }}';
-        let article = document.getElementById("reupload");
-        
-        article.addEventListener("submit", async function(e) {
-            e.preventDefault();
-
-            let formData = new FormData(article);
-            formData.append("article_id", id);
-            console.log([...formData]);
-
-            try {
-                let res = await axios.post(url, formData)    
-                console.log(res);
-                console.log("success");    
-
-                if (res.data != "Fail") {
-                    let title = document.getElementById("title").value;
-                    let content = document.getElementById("content").value;
-
-                    var parent = liElem.parentNode;
-                    var new_article = parent.cloneNode(true);
-                        
-                    var date = new_article.querySelector("#article_date");
-                    date.textContent = res;
-                        
-                    var old_title = new_article.querySelector("#article_title");
-                    old_title.textContent = title;
-                        
-                    var old_content = new_article.querySelector("#article_content");  
-                    old_content.textContent = content;
-
-                    var all_articles = parent.parentNode;
-                    all_articles.replaceChild(new_article, parent);
-                }
-                else {
-                   alert("Could not update article"); 
-                }  
-            } 
-            catch(e) {
-                console.log(e);
-                alert("Could not update article");
-            }
-
-            popup = document.getElementById('article_box');
-            popup.classList.toggle("hide");
+        var close_button = document.getElementById("close");
+        close_button.addEventListener("click", function () {
+            this.parentElement.style.display = 'none';
             location.reload();
         });
 
-        /* 
 
-        repost_button.onclick = function () {
-            re_post(liElem, old_title, old_content, id);
-        };
-        */
-    }
+        function remove(liElem, id, call) {
+            console.log(id);
 
-    //update post
-    function re_post(liElem, old_title, old_content, id) {
-        let title = document.getElementById("title").value;
-        let content = document.getElementById("content").value;
-
-        console.log(old_title);
-        console.log(title);
-        console.log(old_content);
-        console.log(content);
-        console.log(id);
-
-        socket.emit("re_post", id, title, content, (success) => {
-            console.log(success)
-            
-            //successful post
-            if (typeof success == "string") {
-                //update list dynamically
-                var article = liElem.parentNode;
-                var new_article = article.cloneNode(true);
-                
-                var date = new_article.querySelector("#article_date");
-                date.textContent = success;
-                
-                var old_title = new_article.querySelector("#article_title");
-                old_title.textContent = title;
-                
-                var old_content = new_article.querySelector("#article_content");  
-                old_content.textContent = content;
-
-                var all_articles = article.parentNode;
-                all_articles.replaceChild(new_article, article);
-
-            }
-            else {
-                alert("Could not update article");
-            }
-
-         });
-        
-        popup = document.getElementById('article_box');
-        popup.classList.toggle("hide");  
-    }
-
-    //create new comment
-    function comment(butt, article_id) {
-        var article = butt.parentNode;
-        content = article.querySelector("#add_comment").value;
-        console.log(content);
-        socket.emit("comment", username, article_id, content, (res) => {
-            console.log(res);
-            console.log(Array.isArray(res));
-            if (Array.isArray(res)) {
-                //add comment to article
-                all_comments = article.querySelector("ul.comment_section");
-
-                var new_comment = document.createElement("li");
-                new_comment.style.fontSize = "small";
-
-                var div = document.createElement("div");
-                var bold = document.createElement("b");
-                bold.innerText = username;
-                div.appendChild(bold);
-                div.append(" " + account);
-                
-                var div_date = document.createElement("div");
-                div_date.innerText = res[0]
-                
-                var p = document.createElement("p");
-                p.innerText = content;
-
-                new_comment.appendChild(div);
-                new_comment.appendChild(div_date);
-                if (account == "staff") {
-                    let div_role = document.createElement("div");
-                    div_role.innerText = role;
-                    div_role.style.color = "#969696";
-                    new_comment.appendChild(div_role);
+            socket.emit(call, id, (success) => {
+                if (typeof success == "string") {
+                    //unsuccessful removal
+                    alert(success);
                 }
-                new_comment.appendChild(p);
+                else {
+                    //dynamically update list
+                    var li_item = liElem.parentNode;
+                    var ul = li_item.parentNode;
+                    ul.removeChild(li_item);
+                }
+            });
+        }
 
-                if (account == "staff") {
 
-                    let button = document.createElement("button");
-                    button.onclick = function(e) {
-                        remove(this, res[1], "delete_comment");
+        //popup to edit post
+        function edit(liElem, old_title, old_content, id) {
+            popup = document.getElementById('article_box');
+
+            document.getElementById("title").value = old_title;
+            document.getElementById("content").value = old_content;
+
+            popup.classList.toggle("show");
+
+            // let repost_button = document.getElementById("re_post");
+            let url = '{{ url_for("reupload") }}';
+            let article = document.getElementById("reupload");
+
+            article.addEventListener("submit", async function (e) {
+                e.preventDefault();
+
+                let formData = new FormData(article);
+                formData.append("article_id", id);
+                console.log([...formData]);
+
+                try {
+                    let res = await axios.post(url, formData)
+                    console.log(res);
+                    console.log("success");
+
+                    if (res.data != "Fail") {
+                        let title = document.getElementById("title").value;
+                        let content = document.getElementById("content").value;
+
+                        var parent = liElem.parentNode;
+                        var new_article = parent.cloneNode(true);
+
+                        var date = new_article.querySelector("#article_date");
+                        date.textContent = res;
+
+                        var old_title = new_article.querySelector("#article_title");
+                        old_title.textContent = title;
+
+                        var old_content = new_article.querySelector("#article_content");
+                        old_content.textContent = content;
+
+                        var all_articles = parent.parentNode;
+                        all_articles.replaceChild(new_article, parent);
                     }
-                    button.class = "delete";
-                    button.id = "delete_comment";
-                    button.textContent = "Delete";
-                    
-                    new_comment.appendChild(button);
-                }           
-                
-                all_comments.appendChild(new_comment);
-            
-            }
-            else {
-                alert("Could not create comment");
-            }
-        })
-    }
+                    else {
+                        alert("Could not update article");
+                    }
+                }
+                catch (e) {
+                    console.log(e);
+                    alert("Could not update article");
+                }
 
-                
+                popup = document.getElementById('article_box');
+                popup.classList.toggle("hide");
+                location.reload();
+            });
 
-</script>
+            /* 
+    
+            repost_button.onclick = function () {
+                re_post(liElem, old_title, old_content, id);
+            };
+            */
+        }
 
-{% endblock %}
+        //update post
+        function re_post(liElem, old_title, old_content, id) {
+            let title = document.getElementById("title").value;
+            let content = document.getElementById("content").value;
 
+            console.log(old_title);
+            console.log(title);
+            console.log(old_content);
+            console.log(content);
+            console.log(id);
+
+            socket.emit("re_post", id, title, content, (success) => {
+                console.log(success)
+
+                //successful post
+                if (typeof success == "string") {
+                    //update list dynamically
+                    var article = liElem.parentNode;
+                    var new_article = article.cloneNode(true);
+
+                    var date = new_article.querySelector("#article_date");
+                    date.textContent = success;
+
+                    var old_title = new_article.querySelector("#article_title");
+                    old_title.textContent = title;
+
+                    var old_content = new_article.querySelector("#article_content");
+                    old_content.textContent = content;
+
+                    var all_articles = article.parentNode;
+                    all_articles.replaceChild(new_article, article);
+
+                }
+                else {
+                    alert("Could not update article");
+                }
+
+            });
+
+            popup = document.getElementById('article_box');
+            popup.classList.toggle("hide");
+        }
+
+        //create new comment
+        function comment(butt, article_id) {
+            var article = butt.parentNode;
+            content = article.querySelector("#add_comment").value;
+            console.log(content);
+            socket.emit("comment", username, article_id, content, (res) => {
+                console.log(res);
+                console.log(Array.isArray(res));
+                if (Array.isArray(res)) {
+                    //add comment to article
+                    all_comments = article.querySelector("ul.comment_section");
+
+                    var new_comment = document.createElement("li");
+                    new_comment.style.fontSize = "small";
+
+                    var div = document.createElement("div");
+                    var bold = document.createElement("b");
+                    bold.innerText = username;
+                    div.appendChild(bold);
+                    div.append(" " + account);
+
+                    var div_date = document.createElement("div");
+                    div_date.innerText = res[0]
+
+                    var p = document.createElement("p");
+                    p.innerText = content;
+
+                    new_comment.appendChild(div);
+                    new_comment.appendChild(div_date);
+                    if (account == "staff") {
+                        let div_role = document.createElement("div");
+                        div_role.innerText = role;
+                        div_role.style.color = "#969696";
+                        new_comment.appendChild(div_role);
+                    }
+                    new_comment.appendChild(p);
+
+                    if (account == "staff") {
+
+                        let button = document.createElement("button");
+                        button.onclick = function (e) {
+                            remove(this, res[1], "delete_comment");
+                        }
+                        button.class = "delete";
+                        button.id = "delete_comment";
+                        button.textContent = "Delete";
+
+                        new_comment.appendChild(button);
+                    }
+
+                    all_comments.appendChild(new_comment);
+
+                }
+                else {
+                    alert("Could not create comment");
+                }
+            })
+        }
+
+
+
+    </script>
+
+    {% endblock %}

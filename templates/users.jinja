@@ -4,7 +4,7 @@
 {% block content %}
 
 <style>
-    /* nav bar tabs */   
+    /* nav bar tabs */
     .navbar {
         list-style-type: none;
         position: fixed;
@@ -14,7 +14,7 @@
         padding: 0;
         overflow: hidden;
         background-color: #333;
-        }
+    }
 
     .logo {
         display: inline-block;
@@ -22,18 +22,21 @@
         width: 50px;
         height: 50px;
         margin-right: 20px;
-        margin-top: 15px;    /* if you want it vertically middle of the navbar. */
+        margin-top: 15px;
+        /* if you want it vertically middle of the navbar. */
     }
 
     .navbar_tabs {
         display: inline-block;
         vertical-align: top;
         margin-right: 20px;
-        height: 80px;        /* if you want it to take the full height of the bar */
-        line-height: 80px;    /* if you want it vertically middle of the navbar */
+        height: 80px;
+        /* if you want it to take the full height of the bar */
+        line-height: 80px;
+        /* if you want it vertically middle of the navbar */
     }
 
-    /* nav bar display */   
+    /* nav bar display */
     .navbar_tabs li {
         float: left;
     }
@@ -49,14 +52,17 @@
     /* change tab colour when mouse hovers */
     .navbar_tabs li a:hover:not(.active) {
         background-color: #111;
-        }
-        
+    }
+
     /* change navbar to be stacked for smaller screen sizes */
     @media screen and (max-width: 600px) {
-        .navbar_tabs li.right, 
-        .navbar_tabs li {float:none;}
+
+        .navbar_tabs li.right,
+        .navbar_tabs li {
+            float: none;
         }
-    
+    }
+
 
     .user {
         box-shadow: rgba(50, 50, 93, 0.25) 0px 2px 5px -1px, rgba(0, 0, 0, 0.3) 0px 1px 3px -1px;
@@ -66,108 +72,129 @@
         padding-top: 5px;
     }
 
-    .button {  
+    .button {
         margin-bottom: 5px;
         margin-top: 5px;
     }
 
+    body.light-mode {
+        background-color: white;
+        color: black;
+    }
+
+    body.dark-mode {
+        background-color: black;
+        color: white;
+    }
 </style>
 
-<ul class = "navbar">
+<ul class="navbar">
     <li><a href="{{ url_for('articles', username=username) }}">Home</a></li>
     <li><a href=" {{ url_for('home', username=username) }}">Messages</a></li>
     <li><a href="{{ url_for('new_article') }}">New Article</a></li>
     {% if account == "staff" %}
-        <li><a href="{{ url_for('users') }}">User permissions</a></li> 
+    <li><a href="{{ url_for('users') }}">User permissions</a></li>
     {% endif %}
     <li class="right"><a class="active" href="{{ url_for('logout')}}">Sign Out</a></li>
+    <li><button id="toggle-button">Toggle Dark Mode</button></li>
 </ul>
 
 <h1 style="padding:20px;margin-top:30px;">User permissions</h1>
 
 <div id="posting">
-<h2>Posting articles:</h2>
+    <h2>Posting articles:</h2>
 
-<ul id="can_post" style="list-style-type:none;">
-<h3>Authorised users:</h3>
-{% if users %}
-    {% for user in users %}
+    <ul id="can_post" style="list-style-type:none;">
+        <h3>Authorised users:</h3>
+        {% if users %}
+        {% for user in users %}
         {% if user.username != username and user.can_post %}
-            <li id="user_post" class="user">
-                <div id="username"> <b>Username: </b> {{ user.username }} </div> 
-                <div> <b>Account type:</b> {{ user.account }}   </div>
-                    {% if user.account == "staff" %}
-                        <div style="font-size:small;text-indent:10px;"><u>Staff role</u>: <i>{{ user.staff_role }}</i></div>
-                    {% endif %}
-                <button class="button" id="mute_post" onclick="mute_post(this, '{{ user.username }}' )">Mute user</button>
-            </li>
+        <li id="user_post" class="user">
+            <div id="username"> <b>Username: </b> {{ user.username }} </div>
+            <div> <b>Account type:</b> {{ user.account }} </div>
+            {% if user.account == "staff" %}
+            <div style="font-size:small;text-indent:10px;"><u>Staff role</u>: <i>{{ user.staff_role }}</i></div>
+            {% endif %}
+            <button class="button" id="mute_post" onclick="mute_post(this, '{{ user.username }}' )">Mute user</button>
+        </li>
         {% endif %}
-    {% endfor %}
-{% endif %}
-</ul>
+        {% endfor %}
+        {% endif %}
+    </ul>
 
-<ul id="cant_post" style="list-style-type:none;">
-<h3>Muted users:</h3>
-{% if users %}
-    {% for user in users %}
+    <ul id="cant_post" style="list-style-type:none;">
+        <h3>Muted users:</h3>
+        {% if users %}
+        {% for user in users %}
         {% if user.username != username and not user.can_post %}
-            <li id="cant_post" class="user">
-                <div> <b>Username: </b> {{ user.username }} </div> 
-                <div> <b>Account type:</b> {{ user.account }}   </div>
-                    {% if user.account == "staff" %}
-                        <div style="font-size:small;text-indent:10px;"><u>Staff role</u>: <i>{{ user.staff_role }}</i></div>
-                    {% endif %}
-                <button class="button" id="unmute_post" onclick="unmute_post(this, '{{ user.username }}' )">Unmute user</button>
-            </li>
+        <li id="cant_post" class="user">
+            <div> <b>Username: </b> {{ user.username }} </div>
+            <div> <b>Account type:</b> {{ user.account }} </div>
+            {% if user.account == "staff" %}
+            <div style="font-size:small;text-indent:10px;"><u>Staff role</u>: <i>{{ user.staff_role }}</i></div>
+            {% endif %}
+            <button class="button" id="unmute_post" onclick="unmute_post(this, '{{ user.username }}' )">Unmute
+                user</button>
+        </li>
         {% endif %}
-    {% endfor %}
-{% endif %}
-</ul>
+        {% endfor %}
+        {% endif %}
+    </ul>
 </div>
 
 
 <div id="chatting">
-<h2>Joining chatrooms:</h2>
+    <h2>Joining chatrooms:</h2>
 
-<ul id="can_chat" style="list-style-type:none;">
-<h3>Authorised users:</h3>
-{% if users %}
-    {% for user in users %}
+    <ul id="can_chat" style="list-style-type:none;">
+        <h3>Authorised users:</h3>
+        {% if users %}
+        {% for user in users %}
         {% if user.username != username and user.can_message %}
-            <li id="can_chat" class="user">
-                <div><b>Username: </b> {{ user.username }}</div> 
-                <div> <b>Account type: </b> {{ user.account }}  </div>
-                    {% if user.account == "staff" %}
-                        <div style="font-size:small;text-indent:10px;"><u>Staff role</u>: <i>{{ user.staff_role }}</i></div>
-                    {% endif %}
-                <button class="button" id="mute_chat" onclick="mute_chat(this, '{{ user.username }}' )">Mute user</button>
-            </li>
+        <li id="can_chat" class="user">
+            <div><b>Username: </b> {{ user.username }}</div>
+            <div> <b>Account type: </b> {{ user.account }} </div>
+            {% if user.account == "staff" %}
+            <div style="font-size:small;text-indent:10px;"><u>Staff role</u>: <i>{{ user.staff_role }}</i></div>
+            {% endif %}
+            <button class="button" id="mute_chat" onclick="mute_chat(this, '{{ user.username }}' )">Mute user</button>
+        </li>
         {% endif %}
-    {% endfor %}
-{% endif %}
-</ul>
+        {% endfor %}
+        {% endif %}
+    </ul>
 
-<ul id="cant_chat" style="list-style-type:none;">
-<h3>Muted users:</h3>
-{% if users %}
-    {% for user in users %}
+    <ul id="cant_chat" style="list-style-type:none;">
+        <h3>Muted users:</h3>
+        {% if users %}
+        {% for user in users %}
         {% if user.username != username and not user.can_message %}
-            <li id="cant_chat" class="user">
-                <div><b>Username: </b> {{ user.username }}</div> 
-                <div> <b>Account type: </b> {{ user.account }}  </div>
-                    {% if user.account == "staff" %}
-                        <div style="font-size:small;text-indent:10px;"><u>Staff role</u>: <i>{{ user.staff_role }}</i></div>
-                    {% endif %}
-                <button id="unmute_chat" onclick="unmute_chat(this, '{{ user.username }}' )">Unmute user</button>
-            </li>
+        <li id="cant_chat" class="user">
+            <div><b>Username: </b> {{ user.username }}</div>
+            <div> <b>Account type: </b> {{ user.account }} </div>
+            {% if user.account == "staff" %}
+            <div style="font-size:small;text-indent:10px;"><u>Staff role</u>: <i>{{ user.staff_role }}</i></div>
+            {% endif %}
+            <button id="unmute_chat" onclick="unmute_chat(this, '{{ user.username }}' )">Unmute user</button>
+        </li>
         {% endif %}
-    {% endfor %}
-{% endif %}
-</ul>
+        {% endfor %}
+        {% endif %}
+    </ul>
 </div>
 
 <script src="/static/js/libs/socket.io.min.js"></script>
 <script>
+
+    function toggleDarkMode() {
+        const currentMode = document.body.classList.contains('dark-mode') ? 'dark' : 'light';
+        const newMode = currentMode === 'dark' ? 'light' : 'dark';
+        document.body.classList.remove(currentMode + '-mode');
+        document.body.classList.add(newMode + '-mode');
+        Cookies.set('mode', newMode);
+    }
+
+    document.getElementById('toggle-button').addEventListener('click', toggleDarkMode);
     const socket = io();
     function mute_chat(liElem, username) {
         socket.emit("mute", username, "chat", (res) => {
@@ -183,18 +210,18 @@
                 //append to list
                 var ul = document.getElementById("cant_chat");
                 var button = document.createElement("button");
-                
+
                 var b = new_item.querySelector("button");
                 new_item.removeChild(b);
-                new_item.id="cant_chat";
+                new_item.id = "cant_chat";
 
-                button.id= "unmute_chat";
-                button.textContent="Unmute user";
-                button.addEventListener("click" , function() {
+                button.id = "unmute_chat";
+                button.textContent = "Unmute user";
+                button.addEventListener("click", function () {
                     unmute_chat(this, username);
                 });
                 new_item.appendChild(button);
-                
+
                 ul.appendChild(bew_item);
             }
             else {
@@ -210,7 +237,7 @@
                 //dynamically remove from list
                 var li_item = liElem.parentNode;
                 var new_item = li_item.cloneNode(true);
-                
+
                 var li = li_item.parentNode;
                 li.removeChild(li_item);
 
@@ -220,15 +247,15 @@
 
                 var b = new_item.querySelector("button");
                 new_item.removeChild(b);
-                new_item.id="cant_post";
-                
-                button.id= "unmute_post";
-                button.textContent="Unmute user";
-                button.addEventListener("click" , function() {
+                new_item.id = "cant_post";
+
+                button.id = "unmute_post";
+                button.textContent = "Unmute user";
+                button.addEventListener("click", function () {
                     unmute_post(this, username);
                 });
                 new_item.appendChild(button);
- 
+
                 ul.appendChild(new_item);
 
             }
@@ -251,24 +278,24 @@
                 //append to list
                 var ul = document.getElementById("can_chat");
                 var b = new_item.querySelector("button");
-                
+
                 new_item.removeChild(b);
-                new_item.id="can_chat";
-                
+                new_item.id = "can_chat";
+
                 var button = document.createElement("button");
-                button.id= "mute_chat";
-                button.textContent="Mute user";
-                button.addEventListener("click" , function() {
+                button.id = "mute_chat";
+                button.textContent = "Mute user";
+                button.addEventListener("click", function () {
                     mute_chat(this, username);
                 });
                 new_item.appendChild(button);
-                
+
                 ul.appendChild(new_item);
             }
             else {
                 alert("Failed to unmute user");
             }
-            
+
         });
     }
 
@@ -283,27 +310,27 @@
                 li.removeChild(li_item);
 
                 //append to list
-                var ul = document.getElementById("can_post");                
+                var ul = document.getElementById("can_post");
                 var b = new_item.querySelector("button");
-               
+
                 new_item.removeChild(b);
-                new_item.id="can_post";
-                
+                new_item.id = "can_post";
+
                 var button = document.createElement("button");
-                button.id= "mute_post";
-                button.textContent="Mute user";
-                button.addEventListener("click" , function() {
+                button.id = "mute_post";
+                button.textContent = "Mute user";
+                button.addEventListener("click", function () {
                     mute_post(this, username);
                 });
                 new_item.appendChild(button);
-                
+
                 ul.appendChild(new_item);
 
             }
             else {
                 alert("Failed to unmute user");
             }
-            
+
         });
     }
 </script>

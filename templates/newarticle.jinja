@@ -13,10 +13,10 @@
         display: inline-block;
         cursor: pointer;
         margin-top: 30px;
-        }
+    }
 
     .button {
-        background-color: #b0abd2; 
+        background-color: #b0abd2;
         border: none;
         color: #1b1b1b;
         padding: 12px;
@@ -31,7 +31,7 @@
         right: 12px;
         border-radius: 4px;
     }
-    
+
     .button:hover {
         background-color: #9d83fa;
     }
@@ -45,61 +45,82 @@
         border-radius: 6px;
         padding: 8px 0;
         position: absolute;
-        
+
     }
 
     .popup .show {
         visibility: visible;
-        }
+    }
 
+    body.light-mode {
+        background-color: white;
+        color: black;
+    }
+
+    body.dark-mode {
+        background-color: black;
+        color: white;
+    }
 </style>
 
-<ul class = "navbar">
+<ul class="navbar">
     <li><a href="{{ url_for('articles', username=username) }}">Home</a></li>
     <li><a href=" {{ url_for('home', username=username) }}">Messages</a></li>
     <li><a href="{{ url_for('new_article') }}">New Article</a></li>
     {% if account == "staff" %}
-        <li><a href="{{ url_for('users') }}">User permissions</a></li> 
+    <li><a href="{{ url_for('users') }}">User permissions</a></li>
     {% endif %}
     <li class="right"><a class="active" href="{{ url_for('logout')}}">Sign Out</a></li>
+    <li><button id="toggle-button">Toggle Dark Mode</button></li>
 </ul>
 
 <div class="article_box" style="padding:20px;margin-top:50px;">
     <h1>Create a new article</h1>
-    
+
     <form id="article">
         <p>Title:</p>
-            <input id="title" type="text" name="title" width="500px" />
+        <input id="title" type="text" name="title" width="500px" />
         <p>Content:</p>
-            <input id="content" type="text" name="content" class="content-box"/>
+        <input id="content" type="text" name="content" class="content-box" />
         <p>Upload attachment:</p>
-            <input id="file" type="file" name="file"/>
-        <br/>
-        <br/>
-        <br/>
+        <input id="file" type="file" name="file" />
+        <br />
+        <br />
+        <br />
         <button class="button" type="submit">Post</button>
     </form>
 </div>
 
-<div class="popup">    
+<div class="popup">
     <span class="popuptext" id="fail">Article failed to post!</span>
 </div>
 
 <script src="/static/js/libs/socket.io.min.js"></script>
 <script>
+
+    function toggleDarkMode() {
+        const currentMode = document.body.classList.contains('dark-mode') ? 'dark' : 'light';
+        const newMode = currentMode === 'dark' ? 'light' : 'dark';
+        document.body.classList.remove(currentMode + '-mode');
+        document.body.classList.add(newMode + '-mode');
+        Cookies.set('mode', newMode);
+    }
+
+    document.getElementById('toggle-button').addEventListener('click', toggleDarkMode);
+
     const article = document.getElementById("article");
     let url = '{{ url_for("upload") }}';
-    
-    article.addEventListener("submit", async function(e) {
+
+    article.addEventListener("submit", async function (e) {
         e.preventDefault();
 
         const formData = new FormData(article);
         console.log([...formData]);
 
         try {
-            const res = await axios.post(url, formData)    
+            const res = await axios.post(url, formData)
             //console.log(res);
-            console.log("success");   
+            console.log("success");
             if (res.data == "Fail") {
                 alert("Failed to upload article");
                 location.reload();
@@ -108,7 +129,7 @@
                 window.open(res.data, "_self")
             }
         }
-        catch(e) {
+        catch (e) {
             console.log(e);
             alert("Failed to upload article");
             location.reload();
@@ -116,7 +137,7 @@
 
     });
 
-        
+
 
 </script>
 

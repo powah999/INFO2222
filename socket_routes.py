@@ -11,9 +11,10 @@ try:
 except ImportError:
     from app import socketio
 
-from models import Room
+from models import Room, GroupRoom
 import db
 
+grouproom = GroupRoom()
 room = Room()
 public_keys = db.Public()
 session_ids = {}
@@ -44,127 +45,93 @@ def connect():
     #updates online/offline status of friend
     emit('status_update', {'username': username_session, 'status': 'online'}, broadcast=True)
 
-    print(f"\nusername: {username_session} CONNECTED")
-
-    print('\nSession ids: \n')
-
-    print(session_ids)
-
+@socketio.on('create_group')
+def create_group(data):
+    groupname = data.get('groupname')
+    friendlist = data.get('friendlist')
+    sender_name = request.cookies.get("username")
     
-    print('\nPublic keys:\n')
-    print(public_keys.keys)
+    # Add sender's name to the friend list
+    friendlist.append(sender_name)
+    print("\ngroupname: " + groupname)
+    print("friendlist: " + str(friendlist) + '\n')
 
-#gets online/offlien status of friend
-@socketio.on("get_status")
-def get_status(username):
-    print("HEY IS THIS WORKING")
-    if session_ids.get(username) != None:
-        print("HEY IS THIS ONLINE?")
-        return 'online'
-    return 'offline'
+    db.create_history_group(groupname, [], friendlist)
 
-# event when client disconnects
-# quite unreliable use sparingly
-@socketio.on('disconnect')
-def disconnect():
-    username = request.cookies.get("username")
+    for friend in friendlist:
+        db.add_group_to_user(friend, groupname)
 
-    session_ids.pop(username, None)
-    public_keys.keys.pop(username, None)
-    session_tokens.pop(username, None)
-    session.clear()
 
-    print('\nSession ids: \n')
 
-    print(session_ids)
-
+@socketio.on('join_group')
+def join_group(groupname):
     
-    print('\nPublic keys:\n')
-    print(public_keys.keys)
+    sender_name = request.cookies.get("username")
 
-    #updates online/offlien status of friend
-    emit('status_update', {'username': username, 'status': 'offline'}, broadcast=True)
-
-    room_id = room.room_exists(username)
-    if room_id is None:
-        return
-    
-    friendname = request.cookies.get("friendname")
-    
-    message = [f"{username} has disconnected", "red", 'a']
-    room.append_message(room_id, message, username)
-    room.append_message(room_id, message, friendname)
-
-    room.leave_room(username, room_id)
-    history = room.delete_history(room_id, username)
-    print(db.append_history(username, friendname, history))
-
-    emit("incoming", (message[0], message[1], "a"), to=int(room_id))
-
-# send message event handler --> send to everyone but sender
-@socketio.on("send")
-def send(friendname, friendmessage, ourmessage, room_id):
-
-    username = request.cookies.get("username")
-
-    if session_ids.get(username) != request.sid:
+    if session_ids.get(sender_name) != request.sid:
         return 'Your SID does not match the one stored in server'
+            
+    sender = db.get_user(sender_name)
+    if sender is None:
+        return "Unknown sender!"
+
+    # Checks if someone sends a request to masquarade a user
+    pubkey_client = public_keys.get_key(sender_name)
+
+    #uncomment once final
+    # if pubkey_client == None:
+    #     return 'User is not in session'
+
+    # if pubkey != pubkey_client:
+    #     return 'Your pubkey does not match user"s pubkey'
+    try:
+        if sender_name in grouproom.group_members[groupname]:
+            return 'You are already in a room, leave the room first'
+    except KeyError:
+        pass
     
-    if session['username'] != username:
-        return 'invalid session'
+    room_id = grouproom.check_room_id(groupname)
+    # if the user is already inside of a room 
+    if room_id != False:
 
-    if room.friend_in_room(username, friendname, room_id) == False:
-        return "Can't send a message because friend is not in room!"
+        history = db.get_history_group(groupname)
+        if history == -1:
+          print("error -> function: create_groupchat, line 97")
+          return
 
-    friendmessage = [friendmessage, 'black', 'msg']
-    ourmessage = [ourmessage, 'black', 'msg']
+        message = [f"{sender_name} has joined the room.", 'green', 'a']
+        
+        history.append(message)
 
-    room.append_message(room_id, ourmessage, username)
+        grouproom.add_member(groupname, sender_name)
+        grouproom.append_message(groupname, message)
 
-    emit("incoming", (friendmessage[0], friendmessage[1], friendmessage[2]), to=room_id, include_self=False)
+        join_room(room_id)
 
-@socketio.on("receiver_encrypt")
-def receiver_encrypt(message, room_id):
+        # emit to everyone in the room except the sender
+        emit("incoming_group", (message), to=room_id, include_self=False)
+        # emit only to the sender
+        emit("historydump_group", (history), room=request.sid)
+        print(grouproom.group_members)
 
-    username = request.cookies.get("username")
+        return room_id
 
-    if session_ids.get(username) != request.sid:
-        return 'Your SID does not match the one stored in server'
-    
-    storedmessage = [message, 'black', 'msg']
-    room.append_message(room_id, storedmessage, username)
+    # if the user isn't inside of any room, 
+    # perhaps this user has recently left a room
+    # or is simply a new user looking to chat with someone
 
-# leave room event handler
-@socketio.on("leave")
-def leave(friendname, room_id):
+    group_history = db.get_history_group(groupname)
 
-    username = request.cookies.get("username")
+    message = [f"{sender_name} has joined.", "green", "a"]
+    group_history.append(message)
 
-    print(room_id)
-    print(username)
-
-    if session_ids.get(username) != request.sid:
-        return 'Your SID does not match the one stored in server'
-
-    #friendname = request.cookies.get('friendname')
-    print(f'friend leave: {friendname}')
-    
-    message = [f"{username} has left the room.", "red", 'a']
-    room.append_message(room_id, message, username)
-    room.append_message(room_id, message, friendname)
-
-    room.leave_room(username, room_id)
-    history = room.delete_history(room_id, username)
-    a = db.append_history(username, friendname, history)
-    if a == -1:
-        return 'FAILED TO DELETE HISTORY'
-
-    print(f'\n\n DELETED HISTORY: {history}')
-    
-    print(f'\n\n {username} has left {room_id}\n')
-    leave_room(room_id)
-
-    emit("incoming", (message[0], message[1], "a"), to=room_id, include_self=False)
+    room_id = grouproom.create_room(groupname)
+    grouproom.add_member(groupname, sender_name)
+    grouproom.append_message(groupname, message)
+    join_room(room_id)
+    print(grouproom.group_members)
+    emit("historydump_group", (group_history), to=room_id)
+    return room_id
 
 
 # join room event handler
@@ -257,8 +224,178 @@ def join(receiver_name, pubkey):
     #emit("incoming", (message[0], message[1], "a"), to=room_id)
     return room_id
 
+#gets online/offlien status of friend
+@socketio.on("get_status")
+def get_status(username):
+    list = []
+    if session_ids.get(username) != None:
+        print("HEY IS THIS ONLINE?")
+        list.append('online')
+    else:
+        list.append('offline')
+
+    friend_object = db.get_user(username)
+    if friend_object == -1:
+        print('get friend for homepage error!, RETURNED -1')
+
+    if friend_object.account == "staff":
+        list.append(friend_object.staff_role)
+    else:
+        list.append(friend_object.account)
+
+    return list
+    
+
+# event when client disconnects
+# quite unreliable use sparingly
+@socketio.on('disconnect')
+def disconnect():
+    username = request.cookies.get("username")
+    groupname = request.cookies.get("groupname")
+
+    session_ids.pop(username, None)
+    public_keys.keys.pop(username, None)
+    session_tokens.pop(username, None)
+    session.clear()
+
+    #updates online/offlien status of friend
+    emit('status_update', {'username': username, 'status': 'offline'}, broadcast=True)
+
+    room_id = room.room_exists(username)
+    if room_id is not None:
+        friendname = request.cookies.get("friendname")
+        
+        message = [f"{username} has disconnected", "red", 'a']
+        room.append_message(room_id, message, username)
+        room.append_message(room_id, message, friendname)
+
+        room.leave_room(username, room_id)
+        history = room.delete_history(room_id, username)
+        print(db.append_history(username, friendname, history))
+        leave_room(room_id)
+
+        emit("incoming", (message[0], message[1], "a"), to=int(room_id))
+    else:
+        print("THIS SHIT")
+        print(groupname)
+        group_room_id = grouproom.check_room_id(groupname)
+        if group_room_id != False:
+            print("\nTHIS WENT TRHOUG\n")
+            message = [f"{username} has disconnected", "red", 'a']
+            grouproom.append_message(groupname, message)
+            members_left = grouproom.remove_member(groupname, username)
+
+            last_history = grouproom.get_history(groupname)
+            db.insert_history_group(groupname, last_history)
+            grouproom.delete_group(groupname)
+            leave_room(room_id)
+
+            emit("incoming_group", (message), to=group_room_id)
+        else:
+            print('User is not in a room')
+
+# send message event handler
+@socketio.on("send_group")
+def send(groupname, message, room_id):
+    username = request.cookies.get("username")
+    message = [f"{username}: {message}", "black", 'msg']
+    grouproom.append_message(groupname, message)
+    emit("incoming_group", (message), to=room_id)
+
+# send message event handler --> send to everyone but sender
+@socketio.on("send")
+def send(friendname, friendmessage, ourmessage, room_id):
+
+    username = request.cookies.get("username")
+
+    if session_ids.get(username) != request.sid:
+        return 'Your SID does not match the one stored in server'
+    
+    if session['username'] != username:
+        return 'invalid session'
+
+    # if room.friend_in_room(username, friendname, room_id) == False:
+    #     return "Can't send a message because friend is not in room!"
+
+    friendmessage = [friendmessage, 'black', 'msg']
+    ourmessage = [ourmessage, 'black', 'msg']
+
+    room.append_message(room_id, ourmessage, username)
+
+    emit("incoming", (friendmessage[0], friendmessage[1], friendmessage[2]), to=room_id, include_self=False)
+
+@socketio.on("receiver_encrypt")
+def receiver_encrypt(message, room_id):
+
+    username = request.cookies.get("username")
+
+    if session_ids.get(username) != request.sid:
+        return 'Your SID does not match the one stored in server'
+    
+    storedmessage = [message, 'black', 'msg']
+    room.append_message(room_id, storedmessage, username)
+
+@socketio.on("leave_group")
+def leave_group(groupname):
+
+    username = request.cookies.get("username")
+
+    if session_ids.get(username) != request.sid:
+        return 'Your SID does not match the one stored in server'
+
+    room_id = grouproom.check_room_id(groupname)
+    if room_id == False:
+        return 'Room does not exist!'
+
+    message = [f"{username} has left the room.", "red", 'a']
+    grouproom.append_message(groupname, message)
+    members_left = grouproom.remove_member(groupname, username)
+    last_history = grouproom.get_history(groupname)
+    db.insert_history_group(groupname, last_history)
+    grouproom.delete_group(groupname)
+
+    emit("incoming_group", (message), to=room_id, include_self=False)
+
+    leave_room(room_id)
+
+    return 0
+
+# leave room event handler
+@socketio.on("leave")
+def leave(friendname, room_id):
+
+    username = request.cookies.get("username")
+
+    print(room_id)
+    print(username)
+
+    if session_ids.get(username) != request.sid:
+        return 'Your SID does not match the one stored in server'
+
+    #friendname = request.cookies.get('friendname')
+    print(f'friend leave: {friendname}')
+    
+    message = [f"{username} has left the room.", "red", 'a']
+    room.append_message(room_id, message, username)
+    room.append_message(room_id, message, friendname)
+
+    room.leave_room(username, room_id)
+    history = room.delete_history(room_id, username)
+    a = db.append_history(username, friendname, history)
+    if a == -1:
+        return 'FAILED TO DELETE HISTORY'
+
+    print(f'\n\n DELETED HISTORY: {history}')
+    
+    print(f'\n\n {username} has left {room_id}\n')
+    leave_room(room_id)
+
+    emit("incoming", (message[0], message[1], "a"), to=room_id, include_self=False)
+
+
+
 @socketio.on("exchange")
-def exchage(receiver_name, pubkey):
+def exchange(receiver_name, pubkey):
 
     sender_name = request.cookies.get("username")
 
@@ -326,7 +463,7 @@ def send_request(receiver_name):
 
 @socketio.on("remove_friend")
 def remove_friend(friendname):
-
+    print("\nTESTINGG BRO\n")
     username = request.cookies.get("username")
 
     if session_ids.get(username) != request.sid:
@@ -337,9 +474,8 @@ def remove_friend(friendname):
     if flag != 0:
         return flag
     else: 
-        emit("youGotRemoved", (username), to=session_ids.get(friendname))
+        emit("yougotremoved", (username), to=session_ids.get(friendname))
         return 0
-    
 
 @socketio.on("accept")
 def accept(sender_name):
@@ -378,6 +514,7 @@ def decline(sender_name):
     else: 
         emit("check_declined_requests", (receiver_name), to=session_ids.get(sender_name))
         return 0
+        
 
 @socketio.on("delete_article")
 def delete_article(article_id):

@@ -270,15 +270,9 @@ def home():
         else:
             friend_roles[friend.username] = account
 
-    return render_template("home.jinja", 
-                           username=username, 
-                           friends=friends, 
-                           received=db.get_received(username), 
-                           pending=db.get_sent(username), 
-                           friend_status=friend_status, 
-                           friend_roles=friend_roles,
-                           account = db.get_user(username).account
-                           )
+    groups = db.get_groups(username)
+
+    return render_template("home.jinja", username=username, friends=friends, received=db.get_received(username), pending=db.get_sent(username), friend_status=friend_status, friend_roles=friend_roles, groups=groups)
 
 
 #home page, contains all posts
@@ -435,4 +429,4 @@ def users():
     return "Students are not authorised to this page"
 
 if __name__ == '__main__': 
-    socketio.run(app, host="localhost", port=5000 ,debug=False, ssl_context=('localhost.crt', 'localhost.key'))
+    socketio.run(app, host="localhost", port=5000 ,debug=True, ssl_context=('localhost.crt', 'localhost.key'))

@@ -33,6 +33,7 @@ class User(Base):
     password: Mapped[str] = mapped_column(String)
     salt: Mapped[str] = mapped_column(String)
     salt2: Mapped[str] = mapped_column(String)
+    groups: Mapped[str] = mapped_column(String)
 
     ALLOWED_ACCOUNTS = ('student', 'staff')
     account: Mapped[str] = mapped_column(String)
@@ -97,6 +98,14 @@ class History(Base):
     receiver: Mapped[str] = mapped_column(String)
     history: Mapped[str] = mapped_column(String)
 
+
+class GroupHistory(Base):
+    __tablename__ = "group_history"
+
+    groupname: Mapped[int] = mapped_column(String, primary_key=True)
+    members: Mapped[str] = mapped_column(String)
+    history: Mapped[str] = mapped_column(String)
+
 """
 class Students(Base):
     __tablename__ = "students"
@@ -146,11 +155,13 @@ class Counter():
     def get(self):
         self.counter += 1
         return self.counter
+    
+
+globalcounter = Counter()
 
 # Room class, used to keep track of which username is in which room
 class Room():
     def __init__(self):
-        self.counter = Counter()
         # dictionary that maps the username to the room id
         # for example self.dict["John"] -> gives you the room id of 
         # the room where John is in
@@ -158,7 +169,7 @@ class Room():
         self.history = {}
 
     def create_room(self, sender: str, receiver) -> int:
-        room_id = self.counter.get()
+        room_id = globalcounter.get()
         self.dict[room_id] = [(sender, receiver), sender]
         self.history[(room_id,sender)] = []
         print(f'\nCreated room\ndict: {self.dict}')
@@ -251,6 +262,64 @@ class Room():
         self.history[tuple].append(message)
         print(f'\nAppended message\n')
         print(f'history: {self.history}\n')
+
+class GroupRoom():
+    def __init__(self):
+        self.group_id: Dict[str, int] = {}
+        self.group_members: Dict[str, list[str]] = {}
+        self.history: Dict[str, list[str]] = {}
+
+    def check_room_id(self, groupname):
+        if groupname not in self.group_id.keys():
+            return False
+        return self.group_id[groupname]
+        
+
+    def create_room(self, groupname: str):
+        room_id = globalcounter.get()
+        self.group_id[groupname] = room_id
+        self.history[groupname] = []
+        self.group_members[groupname] = []
+        return room_id
+    
+    def add_member(self, groupname: str, username: str):
+        if groupname not in self.group_id.keys():
+            return -1
+        templist = self.group_members[groupname]
+        if username in templist:
+            return -1
+        self.group_members[groupname].append(username)
+        return len(self.group_members[groupname])
+
+    def remove_member(self, groupname: str, username: str):
+        if groupname not in self.group_id.keys():
+            return -1
+        self.group_members[groupname].remove(username)
+        return len(self.group_members[groupname])
+    
+    def delete_group(self, groupname: str):
+        if groupname not in self.group_id.keys():
+            return -1
+        del self.group_id[groupname]
+        del self.group_members[groupname]
+        del self.history[groupname]
+        return 0
+    
+    def append_message(self, groupname: str, message: str):
+        if groupname not in self.group_id.keys():
+            return -1
+        self.history[groupname].append(message)
+        return 0
+    
+    def get_history(self, groupname: str):
+        if groupname not in self.group_id.keys():
+            return -1
+        return self.history[groupname]
+        
+
+
+
+    
 
 
 #number of failed login attempts for a user
